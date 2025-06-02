@@ -3,6 +3,9 @@
 /node_modules
 /build
 
+#Docker volume data
+/redis-data
+
 # Logs
 logs
 *.log
