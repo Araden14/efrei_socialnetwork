@@ -3,9 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { env } from 'process';
 import { BullModule } from '@nestjs/bull';
-import { QueuesModule } from './queues/queues.module';
-import { QueueService } from './queues/queue.service';
-import { QueueController } from './queues/queue.controller';
+import { ChatModule } from './chat/chat.module';
 import { ConfigModule } from '@nestjs/config';
 
 
@@ -18,7 +16,7 @@ import { ConfigModule } from '@nestjs/config';
       port: parseInt(process.env.REDIS_PORT || '6379')
     }
   }),
-  QueuesModule
+  ChatModule
 ],
   controllers: [AppController],
   providers: [AppService],
