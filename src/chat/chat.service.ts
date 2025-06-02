@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { SendMessageDto } from './dto/send-message.dto';
 import { PrismaClient } from '@prisma/client';
+import { TypingDto } from './dto/typing.dto';
 
 const prisma = new PrismaClient();
 
@@ -17,5 +18,9 @@ export class ChatService {
         chatid: message.chatid,
       },
     });
+  }
+
+  async processTyping(message: TypingDto) {
+    console.log('typing identified', message);
   }
 }

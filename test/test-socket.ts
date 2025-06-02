@@ -8,7 +8,7 @@ const socket = io('http://localhost:3000', {
 
 socket.on('connect', () => {
   console.log('Connected');
-  socket.emit('chat:message', {
+  socket.emit('chat:sendmessage', {
     senderid: 1,
     chatid: 1,
     content: 'Hello there!',

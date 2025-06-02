@@ -11,11 +11,14 @@ import {
   import { ChatService } from './chat.service';
 import { SendMessageDto } from './dto/send-message.dto';
 import { PrismaClient } from '@prisma/client';
+import { TypingDto } from './dto/typing.dto';
+import { RedisService } from 'src/redis/redis.service';
+
+
 const prisma = new PrismaClient();
-  
   @WebSocketGateway()
   export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-    constructor(private readonly chatService: ChatService) {}
+    constructor(private readonly chatService: ChatService, private readonly redisService: RedisService) {}
   
     async handleConnection(client: Socket) {
       const userid = client.handshake.query.userId;
@@ -42,7 +45,7 @@ const prisma = new PrismaClient();
 
       // Récupération des identifiants USER à partir des conversations
       const uniqueUserIds = [
-        ...new Set(chats.flatMap(chat => chat.users.map(user => user.id))),
+        ...new Set(chats.flatMap((chat) => chat.users.map((user) => user.id))),
       ];
 
       const users = await prisma.user.findMany({
@@ -96,16 +99,22 @@ const prisma = new PrismaClient();
         messages: convMessages,
       };
       client.emit('chat:init', convData);
-
     }
     
     handleDisconnect(client: Socket) {
       console.log(`Client disconnected: ${client.id}`);
     }
   
-    @SubscribeMessage('chat:message')
+    @SubscribeMessage('chat:sendmessage')
     handleMessage(@MessageBody() message: SendMessageDto, @ConnectedSocket() client: Socket) {
       return this.chatService.processMessage(message);
     }
+
+    @SubscribeMessage('chat:typing')
+    handleTyping(@MessageBody() message: TypingDto, @ConnectedSocket() client: Socket) {
+      return this.chatService.processTyping(message);
+    }
+
+
   }
   
