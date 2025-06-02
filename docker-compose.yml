@@ -1,7 +1,55 @@
 services:
+  # ---------------------------------------------
+  # 1) Service Redis (si vous l’utilisez pour BullMQ)
+  # ---------------------------------------------
   redis:
-    image: redis:alpine
+    image: redis:6-alpine
+    container_name: redis
     ports:
       - "6379:6379"
     volumes:
-      - ./redis-data:/data
+      - redis-data:/data
+    restart: unless-stopped
+
+  # ---------------------------------------------
+  # 2) Service PostgreSQL (pour Prisma)
+  # ---------------------------------------------
+  postgres:
+    image: postgres:13-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: chatdb
+    ports:
+      - "5434:5432"      # Format obligatoire : "hôte:conteneur"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # ---------------------------------------------
+  # 3) Service Backend (NestJS / GraphQL Server)
+  # ---------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nest-backend
+    depends_on:
+      - redis
+      - postgres
+    ports:
+      - "4000:4000"     # "hôte:conteneur" pour exposer le port 4000
+    volumes:
+      - ./:/usr/src/app
+    env_file:
+      - .env
+    command: >
+      sh -c "npm install \
+             && npx prisma generate \
+             && npm run build \
+             && npm run start:prod"
+
+volumes:
+  redis-data:
+  pg-data:

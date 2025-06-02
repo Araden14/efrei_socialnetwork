@@ -1,26 +1,38 @@
-import { ConfigurableModuleBuilder, Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { env } from 'process';
-import { BullModule } from '@nestjs/bull';
-import { QueuesModule } from './queues/queues.module';
-import { QueueService } from './queues/queue.service';
-import { QueueController } from './queues/queue.controller';
-import { ConfigModule } from '@nestjs/config';
+// src/app.module.ts
 
+import { Module } from '@nestjs/common';
+
+// 1) Importez ApolloDriver et son type de configuration
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+
+import { join } from 'path';
+import { BullModule } from '@nestjs/bull';
+
+import { PrismaModule } from './prisma/prisma.module';
+import { UsersModule } from './users/users.module';
+import { ChatsModule } from './chats/chats.module';
+import { MessagesModule } from './messages/messages.module';
+import { ChatGateway } from './chat/chat.gateway';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    // 2) Spécifiez le driver Apollo dans forRoot<ApolloDriverConfig>
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+      playground: true,
+    }),
+
+    // Les autres modules inchangés
+    PrismaModule,
     BullModule.forRoot({
-    redis: {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379')
-    }
-  }),
-  QueuesModule
-],
-  controllers: [AppController],
-  providers: [AppService],
+      redis: { host: 'redis', port: 6379 },
+    }),
+    UsersModule,
+    ChatsModule,
+    MessagesModule,
+  ],
+  providers: [ChatGateway],
 })
 export class AppModule {}
