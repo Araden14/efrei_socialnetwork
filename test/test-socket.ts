@@ -1,13 +1,19 @@
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:3000');
+const socket = io('http://localhost:3000', {
+    query: {
+        userId: 1,
+    },
+});
 
 socket.on('connect', () => {
   console.log('Connected');
   socket.emit('chat:message', {
-    senderId: 'user1',
-    recipientId: 'user2',
-    message: 'Hello there!',
-    timestamp: new Date().toISOString(),
+    senderid: 1,
+    chatid: 1,
+    content: 'Hello there!',
+  });
+  socket.on('chat:init', (data) => {
+    console.log('Chat initialized', data);
   });
 });
