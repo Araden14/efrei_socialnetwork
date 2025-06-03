@@ -12,7 +12,7 @@ describe('CatsController', () => {
 
   describe('getHello', () => {
     it('should return "Hello World!"', () => {
-      const result = 'Hello World!';
+      const result = 'Hello Wo!';
       jest.spyOn(appService, 'getHello').mockImplementation(() => result);
 
       expect(appController.getHello()).toBe(result);
