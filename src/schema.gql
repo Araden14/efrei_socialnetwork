@@ -1,0 +1,76 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Message {
+  id: Int!
+  content: String!
+  timestamp: DateTime!
+  userid: Int!
+  chatId: Int!
+  user: User
+  chat: Chat
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Chat {
+  id: Int!
+  title: String!
+  users: [User!]
+  Message: [Message!]
+}
+
+type User {
+  id: Int!
+  email: String!
+  name: String!
+  posts: [Chat!]
+  Message: [Message!]
+}
+
+type AuthPayload {
+  access_token: String!
+}
+
+type Query {
+  users: [User!]!
+  user(id: Int!): User
+  chats: [Chat!]!
+  chat(id: Int!): Chat
+  messages(chatId: Int!): [Message!]!
+}
+
+type Mutation {
+  createUser(data: CreateUserInput!): User!
+  createChat(data: CreateChatInput!): Chat!
+  addUserToChat(chatId: Int!, userId: Int!): Chat!
+  sendMessage(data: CreateMessageInput!): Boolean!
+  register(data: CreateUserInput!): AuthPayload!
+  login(data: LoginInput!): AuthPayload!
+}
+
+input CreateUserInput {
+  email: String!
+  password: String!
+  name: String!
+}
+
+input CreateChatInput {
+  title: String!
+  userIds: [Int]
+}
+
+input CreateMessageInput {
+  userId: Int!
+  chatId: Int!
+  content: String!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
