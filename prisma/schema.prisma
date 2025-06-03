@@ -35,7 +35,7 @@ model Message {
     content String
     user    User     @relation(fields: [userid], references: [id])
     userid  Int
-    chat    Chat     @relation(fields: [chatId], references: [id])
+    chat    Chat     @relation(fields: [chatid], references: [id])
     chatid  Int
     timestamp DateTime @default(now())
 }
