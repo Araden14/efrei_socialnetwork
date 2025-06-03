@@ -5,7 +5,6 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
 import { BullModule } from '@nestjs/bull';
-
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { ChatModule } from './chat/chat.module';
@@ -13,6 +12,7 @@ import { MessagesModule } from './messages/messages.module';
 import { ChatGateway } from './chat/chat.gateway';
 import { RedisModule } from './redis/redis.module';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -35,6 +35,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin
     ChatModule,
     RedisModule,
     MessagesModule,
+    AuthModule,
   ],
   providers: [ChatGateway],
 })
