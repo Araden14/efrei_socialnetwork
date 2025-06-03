@@ -4,5 +4,4 @@ WORKDIR /app
 COPY . .
 RUN apt-get update -y && apt-get install -y openssl && npm install --omit=dev && npm install -g @nestjs/cli
 
-ENTRYPOINT ["npx", "prisma", "migrate", "deploy"]
-CMD ["nest", "start"]
+CMD ["sh", "-c", "npx prisma migrate deploy && nest start"]
