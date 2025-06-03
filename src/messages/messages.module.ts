@@ -1,12 +1,11 @@
 // src/messages/messages.module.ts
 
-import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
-import { MessagesService } from './messages.service';
-import { MessagesResolver } from './messages.resolver';
-import { MessagesConsumer } from './messages.consumer';  // le consumer qu'on vient de créer
-import { PrismaModule } from '../prisma/prisma.module';
+import { Module } from '@nestjs/common';
 import { ChatModule } from '../chat/chat.module';
+import { PrismaModule } from '../prisma/prisma.module';
+import { MessagesResolver } from './messages.resolver';
+import { MessagesService } from './messages.service';
 
 @Module({
   imports: [
@@ -29,7 +28,6 @@ import { ChatModule } from '../chat/chat.module';
   providers: [
     MessagesService,     // service GraphQL (sendMessageToQueue + getMessages)
     MessagesResolver,    // resolver GraphQL
-    MessagesConsumer,    // consumer Bull (sous forme de "MessagesConsumer")
   ],
   exports: [MessagesService],
 })
