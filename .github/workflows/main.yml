@@ -40,10 +40,10 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker build -t yourdockerhubuser/yourapp:latest .
+        run: docker build -t efreisocialnetwork/socialnetworkbackend:latest .
 
       - name: Push Docker image
-        run: docker push yourdockerhubuser/yourapp:latest
+        run: docker push efreisocialnetwork/socialnetworkbackend:latest
 
       - name: Trigger Deploy on Render
         run: |
