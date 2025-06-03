@@ -5,30 +5,40 @@ import {
     OnGatewayConnection,
     OnGatewayDisconnect,
     MessageBody,
+    WebSocketServer,
     ConnectedSocket,
   } from '@nestjs/websockets';
-  import { Socket } from 'socket.io';
+  import { Socket, Server } from 'socket.io';
   import { ChatService } from './chat.service';
-import { SendMessageDto } from './dto/send-message.dto';
 import { PrismaClient } from '@prisma/client';
 import { TypingDto } from './dto/typing.dto';
 import { RedisService } from 'src/redis/redis.service';
+import { SendMessageDto } from './dto/send-message.dto';
+import { Injectable } from '@nestjs/common';
+
 
 
 const prisma = new PrismaClient();
+  @Injectable()
   @WebSocketGateway()
   export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-    constructor(private readonly chatService: ChatService, private readonly redisService: RedisService) {}
+    @WebSocketServer() io: Server;
+    // store sockets
+    private userSockets = new Map<number, Socket>();
+    constructor(
+      private readonly chatService: ChatService,
+      private readonly redisService: RedisService
+    ) {}
   
     async handleConnection(client: Socket) {
-      const userid = client.handshake.query.userId;
-
+      const userid = client.handshake.query.userid;
       // ENVOI DES DONNEES DE CONVERSATION VERS LE FRONT (src -> chat -> dto -> convdata.dto.ts) //
       if (!userid) {
         console.log("User not authenticated");
         client.disconnect();
         return;
       }
+      this.userSockets.set(Number(userid), client);
       console.log(`Client connected: ${client.id}`);
       // Recupération des conversations
       const chats = await prisma.chat.findMany({
@@ -89,6 +99,7 @@ const prisma = new PrismaClient();
         id: msg.id,
         content: msg.content,
         userid: msg.userid,
+        //@ts-ignore
         chatid: msg.chatid,
         timestamp: msg.timestamp.toISOString(),
       }));
@@ -105,14 +116,43 @@ const prisma = new PrismaClient();
       console.log(`Client disconnected: ${client.id}`);
     }
   
-    @SubscribeMessage('chat:sendmessage')
-    handleMessage(@MessageBody() message: SendMessageDto, @ConnectedSocket() client: Socket) {
-      return this.chatService.processMessage(message);
+    async handleNewMessage(message: SendMessageDto) {
+      console.log('message identified by gateway', message);
+      // send the message to the client
+      // get userid from userSockets
+      // get the chat object from the message
+      const chat = await prisma.chat.findUnique({
+        where: {
+          id: message.chatid,
+        },
+        include: {
+          users: true,
+        },
+      });
+      // get the other userid associated with the chat
+      const otherUserId = chat?.users?.find(user => user.id !== message.senderid);
+      // send the message to the other user
+      if (otherUserId) {
+        this.emitToUser(otherUserId.id, 'chat:newmessage', message);
+      }
     }
+
+    @SubscribeMessage('chat:sendmessage')
+    handleSendMessage(@MessageBody() message: SendMessageDto, @ConnectedSocket() client: Socket) {
+      return this.chatService.writeMessage(message);
+    }
+
+    public emitToUser(userId: number, event: string, payload: any) {
+      const socket = this.userSockets.get(userId);
+      if (socket && socket.connected) {
+        socket.emit(event, payload);
+      }
+    }
+
 
     @SubscribeMessage('chat:typing')
     handleTyping(@MessageBody() message: TypingDto, @ConnectedSocket() client: Socket) {
-      return this.chatService.processTyping(message);
+      return this.chatService.writeTyping(message);
     }
 
 
