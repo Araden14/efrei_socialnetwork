@@ -1,13 +1,13 @@
 // src/chats/chats.resolver.ts
 
 import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { ChatsService } from './chats.service';
+import { ChatService } from './chat.service';
 import { CreateChatInput } from './dto/create-chat.input';
 import { Chat } from './models/chat.model';
 
 @Resolver(() => Chat)
-export class ChatsResolver {
-  constructor(private readonly chatsService: ChatsService) {}
+export class ChatResolver {
+  constructor(private readonly chatsService: ChatService) {}
 
   @Query(() => [Chat], { name: 'chats' })
   async chats() {

@@ -1,7 +1,7 @@
 // src/users/models/user.model.ts
 
 import { ObjectType, Field, Int } from '@nestjs/graphql';
-import { Chat } from '../../chats/models/chat.model';
+import { Chat } from '../../chat/models/chat.model';
 import { Message } from '../../messages/models/message.model';
 
 @ObjectType()
