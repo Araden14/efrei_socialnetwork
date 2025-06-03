@@ -6,7 +6,6 @@
 
 generator client {
     provider = "prisma-client-js"
-    output   = "../generated/prisma"
 }
 
 datasource db {
@@ -37,6 +36,6 @@ model Message {
     user    User     @relation(fields: [userid], references: [id])
     userid  Int
     chat    Chat     @relation(fields: [chatId], references: [id])
-    chatId  Int
+    chatid  Int
     timestamp DateTime @default(now())
 }
