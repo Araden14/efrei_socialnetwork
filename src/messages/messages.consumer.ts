@@ -53,8 +53,8 @@
 //       timestamp: newMessage.timestamp,
 //     };
 
-//     /* 3) Diffuser l’événement WebSocket dans la room `chat_<chatId>`
-//     this.chatGateway.sendMessageToRoom(chatId, messageDTO);*/
+//     // 3) Diffuser l’événement WebSocket dans la room `chat_<chatId>`
+//     this.chatGateway.sendMessageToRoom(chatId, messageDTO);
 
 //     this.logger.log(
 //       `Émission newMessage dans la room chat_${chatId} → payload = ${JSON.stringify(messageDTO)}`,

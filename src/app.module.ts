@@ -11,9 +11,10 @@ import { BullModule } from '@nestjs/bull';
 
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
-import { ChatsModule } from './chats/chats.module';
+import { ChatModule } from './chat/chat.module';
 import { MessagesModule } from './messages/messages.module';
 import { ChatGateway } from './chat/chat.gateway';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -30,7 +31,8 @@ import { ChatGateway } from './chat/chat.gateway';
       redis: { host: 'redis', port: 6379 },
     }),
     UsersModule,
-    ChatsModule,
+    ChatModule,
+    RedisModule,
     MessagesModule,
   ],
   providers: [ChatGateway],

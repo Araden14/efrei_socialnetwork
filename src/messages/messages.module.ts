@@ -1,11 +1,10 @@
 // src/messages/messages.module.ts
 
 import { BullModule } from '@nestjs/bull';
-import { Module } from '@nestjs/common';
-import { ChatModule } from '../chat/chat.module';
-import { PrismaModule } from '../prisma/prisma.module';
-import { MessagesResolver } from './messages.resolver';
 import { MessagesService } from './messages.service';
+import { MessagesResolver } from './messages.resolver';
+import { PrismaModule } from '../prisma/prisma.module';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
   imports: [
