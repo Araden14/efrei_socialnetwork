@@ -50,7 +50,7 @@ jobs:
           response=$(curl -s -w "%{http_code}" -o response.txt \
             -X POST "https://api.render.com/deploy/srv-d0vdb295pdvs738coprg?key=${{secrets.RENDER_API_KEY}}")
 
-          if [ "$response" -ge 200 ] && [ "$status_code" -lt 300 ]; then
+          if [ "$response" -ge 200 ] && [ "$response" -lt 300 ]; then
             echo "✅ Deploy triggered successfully (HTTP $response)"
           else
             echo "❌ Render deploy failed with HTTP status $response"
