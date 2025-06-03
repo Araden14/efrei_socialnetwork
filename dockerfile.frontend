@@ -2,5 +2,4 @@ from node:22-slim
 
 WORKDIR /app
 COPY ./frontend .
-RUN npm install --omit=dev
-
+RUN npm install

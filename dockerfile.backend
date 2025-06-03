@@ -1,6 +1,8 @@
 FROM node:22-slim
 
 WORKDIR /app
-COPY . .
-RUN npm install --omit=dev
+COPY ./frontend .
+RUN npm install --omit=dev && npm install -g @nestjs/cli
 
+ENTRYPOINT ["npx", "prisma", "migrate", "deploy"]
+CMD ["nest", "start", "--env-file", ".env"]
