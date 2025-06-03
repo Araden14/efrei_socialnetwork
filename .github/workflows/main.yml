@@ -40,7 +40,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker build -t efreisocialnetwork/socialnetworkbackend:latest .
+        run: docker build -t efreisocialnetwork/socialnetworkbackend:latest -f dockerfile.backend .
 
       - name: Push Docker image
         run: docker push efreisocialnetwork/socialnetworkbackend:latest
