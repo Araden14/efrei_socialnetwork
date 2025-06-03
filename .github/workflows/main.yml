@@ -47,4 +47,13 @@ jobs:
 
       - name: Trigger Deploy on Render
         run: |
-          curl --request POST --url https://api.render.com/v1/services/srv-d0vdb295pdvs738coprg/deploys --header 'accept: application/json' --header 'authorization: Bearer ${{ secrets.RENDER_API_KEY }}' --header 'content-type: application/json'
+          response=$(curl -s -w "%{http_code}" -o response.txt \
+            -X POST "https://api.render.com/deploy/srv-d0vdb295pdvs738coprg?key=${{secrets.RENDER_API_KEY}}")
+
+          if [ "$response" -ne 201 ]; then
+            echo "❌ Render deploy failed with HTTP status $response"
+            cat response.txt
+            exit 1
+          else
+            echo "✅ Deploy triggered successfully (HTTP $response)"
+          fi
