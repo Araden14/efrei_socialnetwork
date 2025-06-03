@@ -26,7 +26,6 @@ export class ChatsService {
     return this.prisma.chat.findMany({
       include: {
         users: true,
-        // On inclut simplement les messages sans tri
         Message: true,
       },
     });
@@ -37,7 +36,6 @@ export class ChatsService {
       where: { id },
       include: {
         users: true,
-        // On inclut simplement les messages sans tri
         Message: true,
       },
     });

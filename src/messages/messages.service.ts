@@ -1,3 +1,5 @@
+// src/messages/messages.service.ts
+
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { InjectQueue } from '@nestjs/bull';
@@ -7,37 +9,35 @@ import { Queue } from 'bull';
 export class MessagesService {
   constructor(
     private readonly prisma: PrismaService,
-    @InjectQueue('chat') private readonly chatQueue: Queue,
+    @InjectQueue('messages') private readonly messagesQueue: Queue,
   ) {}
 
   /**
-   * Récupère tous les messages d’un chat, triés par date de création.
+   * Récupère tous les messages d’un chat (chatId), triés par `timestamp` croissant, 
+   * avec la relation `user` et `chat`.
    */
-  async getMessages(chatId: number) {
+  async getMessages(chatid: number) {
     return this.prisma.message.findMany({
-      where: { chatId },
-      include: { user: true },
+      where:   { chatid },
+      orderBy: { timestamp: 'asc' },
+      include: { user: true, chat: true },
     });
   }
 
   /**
-   * Crée un nouveau message en base, puis publie un job “new_message” dans la queue “chat”.
+   * Publie un job 'saveMessage' dans la queue 'messages'.
+   * Le consumer créera ensuite le Message en base et propagera le WebSocket.
    */
-  async sendMessage(userid: number, chatId: number, content: string) {
-    // 1) On crée l’enregistrement dans la table Message
-    const saved = await this.prisma.message.create({
-      data: { userid, chatId, content },
-      include: { user: true },
-    });
-
-    // 2) On publie le job dans BullMQ (Redis)
-    await this.chatQueue.add('new_message', {
-      messageId: saved.id,
-      userid,
+  async sendMessageToQueue(
+    userId: number,
+    chatId: number,
+    content: string,
+  ): Promise<boolean> {
+    await this.messagesQueue.add('saveMessage', {
       chatId,
+      userId,
       content,
     });
-
-    return saved;
+    return true;
   }
 }

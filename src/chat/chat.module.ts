@@ -6,6 +6,6 @@ import { RedisService } from '../redis/redis.service';
 
 @Module({
   providers: [ChatService, ChatGateway, RedisService],
-  exports: [ChatService],
+  exports: [ChatService, ChatGateway],
 })
 export class ChatModule {}

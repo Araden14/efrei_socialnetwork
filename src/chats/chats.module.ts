@@ -1,13 +1,12 @@
 // src/chats/chats.module.ts
 
 import { Module } from '@nestjs/common';
-import { PrismaModule } from '../prisma/prisma.module';
-import { UsersModule } from '../users/users.module';
 import { ChatsService } from './chats.service';
 import { ChatsResolver } from './chats.resolver';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [PrismaModule, UsersModule],
+  imports: [PrismaModule],
   providers: [ChatsService, ChatsResolver],
   exports: [ChatsService],
 })
