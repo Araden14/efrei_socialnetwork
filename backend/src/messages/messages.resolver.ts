@@ -40,8 +40,8 @@ export class MessagesResolver {
     @Args('data') data: CreateMessageInput,
   ): Promise<boolean> {
     return this.messagesService.sendMessageToQueue(
-      data.userId,
-      data.chatId,
+      data.userid,
+      data.chatid,
       data.content,
     );
   }

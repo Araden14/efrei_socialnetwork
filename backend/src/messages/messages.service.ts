@@ -1,15 +1,12 @@
-// src/messages/messages.service.ts
-
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class MessagesService {
   constructor(
     private readonly prisma: PrismaService,
-    @InjectQueue('messages') private readonly messagesQueue: Queue,
+    private readonly redisService: RedisService,
   ) {}
 
   /**
@@ -29,14 +26,15 @@ export class MessagesService {
    * Le consumer créera ensuite le Message en base et propagera le WebSocket.
    */
   async sendMessageToQueue(
-    userId: number,
-    chatId: number,
+    userid: number,
+    chatid: number,
     content: string,
   ): Promise<boolean> {
-    await this.messagesQueue.add('saveMessage', {
-      chatId,
-      userId,
-      content,
+    await this.redisService.addMessageToQueue({
+      userid: userid,
+      chatid: chatid,
+      content: content,
+      timestamp: new Date()
     });
     return true;
   }
