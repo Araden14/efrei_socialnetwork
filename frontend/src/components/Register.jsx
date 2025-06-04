@@ -1,14 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { gql, useMutation } from '@apollo/client';
+import { useNavigate } from 'react-router-dom';
 import './Login.css';
+
+const REGISTER_MUTATION = gql`
+  mutation Register($data: CreateUserInput!) {
+    register(data: $data) {
+      access_token
+    }
+  }
+`;
 
 const Register = ({ onRegister }) => {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
-  const handleSubmit = (e) => {
+  const [register, { data, loading, error }] = useMutation(REGISTER_MUTATION);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (data && data.register && data.register.access_token) {
+      // Optionnel : stocker le token
+      localStorage.setItem('token', data.register.access_token);
+      // Appelle le callback pour mettre à jour le user dans App.jsx
+      if (onRegister) {
+        onRegister({ token: data.register.access_token, email, name });
+      }
+      navigate('/messagerie');
+    }
+  }, [data, navigate, onRegister, email, name]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (email.trim() && name.trim() && password.trim()) {
-      onRegister({ email, name, password });
+      await register({ variables: { data: { email, name, password } } });
     }
   };
 
@@ -37,7 +62,9 @@ const Register = ({ onRegister }) => {
           value={password}
           onChange={e => setPassword(e.target.value)}
         />
-        <button type="submit">S'inscrire</button>
+        <button type="submit" disabled={loading}>S'inscrire</button>
+        {error && <div style={{ color: 'red', marginTop: 8 }}>{error.message}</div>}
+        {data && <div style={{ color: 'green', marginTop: 8 }}>Inscription réussie !</div>}
       </form>
     </div>
   );
