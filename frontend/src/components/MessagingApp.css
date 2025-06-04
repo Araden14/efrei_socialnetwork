@@ -28,6 +28,7 @@
   
   .search-container {
     position: relative;
+    margin-right: 50px;
   }
   
   .search-icon {
@@ -409,4 +410,24 @@
 
 .new-chat-form button[type="button"]:hover {
   background: #d11a2a;
+}
+
+.logout-btn {
+  background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 16px;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.08);
+}
+
+.logout-btn:hover {
+  background: linear-gradient(90deg, #dc2626 0%, #f87171 100%);
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.15);
 }

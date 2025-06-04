@@ -1,40 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Login.css';
 import { Link } from 'react-router-dom';
+import { gql, useMutation } from '@apollo/client';
+
+const LOGIN_MUTATION = gql`
+  mutation Login($data: LoginInput!) {
+    login(data: $data) {
+      access_token
+    }
+  }
+`;
 
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const handleSubmit = (e) => {
+  const [login, { data, loading, error }] = useMutation(LOGIN_MUTATION);
+
+  useEffect(() => {
+    if (data && data.login && data.login.access_token) {
+      localStorage.setItem('token', data.login.access_token);
+      if (onLogin) {
+        onLogin({ token: data.login.access_token, email });
+      }
+    }
+  }, [data, onLogin, email]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (email.trim() && password.trim()) {
-      onLogin({ email, password });
+      await login({ variables: { data: { email, password } } });
     }
   };
-
-  
-// fetch('http://localhost:4000/graphql', {
-//   method: 'POST',
-//   headers: { 'Content-Type': 'application/json' },
-//   body: JSON.stringify({
-//     query: `
-//       mutation Login($username: String!, $password: String!) {
-//         login(username: $username, password: $password) {
-//           token
-//           user { id username }
-//         }
-//       }
-//     `,
-//     variables: {
-//       username: 'alice',
-//       password: 'motdepasse'
-//     }
-//   })
-// })
-//   .then(res => res.json())
-//   .then(data => {
-//     // data.data.login contient le token et l'utilisateur
-//   });
 
   return (
     <div className="login-page">
@@ -44,8 +40,8 @@ const Login = ({ onLogin }) => {
           Accédez à votre messagerie professionnelle
         </p>
         <input
-          type="text"
-          placeholder="Nom d'utilisateur"
+          type="email"
+          placeholder="Adresse email"
           value={email}
           onChange={e => setEmail(e.target.value)}
         />
@@ -55,13 +51,15 @@ const Login = ({ onLogin }) => {
           value={password}
           onChange={e => setPassword(e.target.value)}
         />
-        <button type="submit">Se connecter</button>
-        <p style={{textAlign: "center", marginTop: 10}}>
+        <button type="submit" disabled={loading}>Se connecter</button>
+        {error && <div style={{ color: 'red', marginTop: 8 }}>{error.message}</div>}
+              <p style={{textAlign: "center", marginTop: 10}}>
         <Link to="/register" style={{ color: "#2563eb", textDecoration: "underline" }}>
-            Créer un compte
+          Créer un compte
         </Link>
-        </p>
+      </p>
       </form>
+
     </div>
   );
 };

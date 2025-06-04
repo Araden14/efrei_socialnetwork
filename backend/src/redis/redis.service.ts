@@ -14,7 +14,7 @@ export class RedisService {
   constructor() {
     const connection = new IORedis(
         {
-            host: 'localhost',
+            host: 'redis-alpine-38dm.onrender.com',
             port: 6379,
         }
     );

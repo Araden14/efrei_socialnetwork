@@ -7,7 +7,7 @@ const users = [
   { id: 2, name: 'Bob Dupont' }
 ];
 
-const MessagingApp = () => {
+const MessagingApp = ({ user, onLogout }) => {
   const [showNewChat, setShowNewChat] = useState(false);
   const [newChatName, setNewChatName] = useState('');
   const [selectedChat, setSelectedChat] = useState(null);
@@ -55,6 +55,12 @@ const MessagingApp = () => {
     }
   };
 
+  const handleLogout = async () => { 
+    localStorage.removeItem('token');
+    if (onLogout) onLogout();
+    // Si tu veux, tu peux aussi utiliser navigate('/login') ici si tu utilises useNavigate
+  };
+
   const handleSendMessage = () => {
     if (newMessage.trim() && selectedChat) {
       const newMsg = {
@@ -86,6 +92,9 @@ const MessagingApp = () => {
       <div className="sidebar">
         <div className="sidebar-header">
           <h1>Messages</h1>
+        <button className="logout-btn" onClick={handleLogout}>
+          Logout
+        </button>
           <button
             className="new-chat-btn"
             onClick={() => setShowNewChat(true)}
