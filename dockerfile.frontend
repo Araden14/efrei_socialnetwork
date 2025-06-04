@@ -3,3 +3,5 @@ from node:22-slim
 WORKDIR /app
 COPY ./frontend .
 RUN npm install
+
+CMD ["npm", "run"]

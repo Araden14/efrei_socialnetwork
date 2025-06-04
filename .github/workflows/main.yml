@@ -1,13 +1,34 @@
-name: Build, Test, and Deploy Docker to Render (test version)
+# A CHANGER LORSQU'ON VA FUSIONER A LA BRANCHE MAIN POUR GERER LES DOSSIERS FRONT/BACK
+name: Build, Test, and Deploy Docker to Render (test version) !ONLY BACK FOR CURRENTLY!
 
 on:
   push:
     branches: [guilherme]
 
 jobs:
+  build:
+    name: Build project
+    runs-on: ubuntu-latest
+
+    steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
+
+        - name: Set up Node.js
+          uses: actions/setup-node@v3
+          with:
+            node-version: 22
+
+        - name: Install dependencies
+          run: npm install
+
+        - name: Run build
+          run: nest build
+
   test:
     name: Run Unit Tests
     runs-on: ubuntu-latest
+    needs: build
 
     steps:
       - name: Checkout code
@@ -27,7 +48,7 @@ jobs:
   deploy_back:
     name: Build and Deploy backend to Render
     runs-on: ubuntu-latest
-    needs: test # <-- Run only if tests pass
+    needs: test
 
     steps:
       - name: Checkout code
