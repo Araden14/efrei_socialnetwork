@@ -2,32 +2,26 @@ import { Injectable } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { Redis } from 'ioredis';
 import { Queue } from 'bullmq';
-import IORedis from 'ioredis';
 import { SendMessageDto } from '../chat/dto/send-message.dto';
+import { InjectQueue } from '@nestjs/bull';
 
 const prisma = new PrismaClient();
 
 
 @Injectable()
 export class RedisService {
-  private readonly chatQueue: Queue;
-  constructor() {
-    const connection = new IORedis(
-        {
-            host: 'redis-alpine-38dm.onrender.com',
-            port: 6379,
-        }
-    );
-    
-    this.chatQueue = new Queue('chat', {
-        connection,
-      });
-      console.log("Redis ✅")
-    }
+  constructor(@InjectQueue('chat') private readonly chatQueue: Queue) {
+    console.log("Redis ✅")
+  }
     
     // Ecriture d'un message sur db et redis
     async addMessageToQueue(message: SendMessageDto) {
-        await this.chatQueue.add('newMessage', { message });
+        try {
+            await this.chatQueue.add('newMessage', { message });
+        } catch (error) {
+            console.error("Failed to add message to queue:", error);
+            throw new Error("Could not add message to queue");
+        }
     }
 
     async removeMessageFromQueue(messageid: number): Promise<boolean> {
