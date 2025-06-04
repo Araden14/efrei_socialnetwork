@@ -26,7 +26,15 @@ export class ChatService {
   }
   
   async handleIncomingMessage(message: SendMessageDto) {
-    console.log('message identified by worker', message);
+    const newMessage = await this.prisma.message.create({
+      data: {
+        userid: message.userid,
+        content: message.content,
+        chatid: message.chatid,
+        timestamp: new Date(),
+      },
+    });
+    return newMessage;
   }
   async createChat(data: CreateChatInput) {
     return this.prisma.chat.create({

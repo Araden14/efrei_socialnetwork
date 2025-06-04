@@ -13,7 +13,6 @@ import {
   import { ChatService } from './chat.service';
 import { PrismaClient } from '@prisma/client';
 import { TypingDto } from './dto/typing.dto';
-import { RedisService } from 'src/redis/redis.service';
 import { SendMessageDto } from './dto/send-message.dto';
 import { Injectable } from '@nestjs/common';
 
@@ -21,14 +20,18 @@ import { Injectable } from '@nestjs/common';
 
 const prisma = new PrismaClient();
   @Injectable()
-  @WebSocketGateway()
+  @WebSocketGateway({
+    cors: {
+      origin: ['http://localhost:3000', 'http://localhost:5173'],
+      credentials: true,
+    },
+  })
   export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-    @WebSocketServer() io: Server;
+    @WebSocketServer( ) io: Server;
     // store sockets
     private userSockets = new Map<number, Socket>();
     constructor(
       private readonly chatService: ChatService,
-      private readonly redisService: RedisService
     ) {}
   
     async handleConnection(client: Socket) {
@@ -110,15 +113,14 @@ const prisma = new PrismaClient();
         chats: convChats,
         messages: convMessages,
       };
+      console.log(convData)
       client.emit('chat:init', convData);
     }
-    
     handleDisconnect(client: Socket) {
       console.log(`Client disconnected: ${client.id}`);
     }
   
     async handleNewMessage(message: SendMessageDto) {
-      console.log('message identified by gateway', message);
       // send the message to the client
       // get userid from userSockets
       // get the chat object from the message
@@ -131,17 +133,17 @@ const prisma = new PrismaClient();
         },
       });
       // get the other userid associated with the chat
-      const otherUserId = chat?.users?.find(user => user.id !== message.senderid);
+      const otherUserId = chat?.users?.find(user => user.id !== message.userid);
       // send the message to the other user
       if (otherUserId) {
         this.emitToUser(otherUserId.id, 'chat:newmessage', message);
       }
     }
 
-    @SubscribeMessage('chat:sendmessage')
-    handleSendMessage(@MessageBody() message: SendMessageDto, @ConnectedSocket() client: Socket) {
-      return this.chatService.writeMessage(message);
-    }
+    // @SubscribeMessage('chat:sendmessage')
+    // handleSendMessage(@MessageBody() message: SendMessageDto, @ConnectedSocket() client: Socket) {
+    //   return this.chatService.writeMessage(message);
+    // }
 
     public emitToUser(userId: number, event: string, payload: any) {
       const socket = this.userSockets.get(userId);

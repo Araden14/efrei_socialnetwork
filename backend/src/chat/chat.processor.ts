@@ -12,7 +12,8 @@ export class ChatProcessor {
   @Process('newMessage')
   async handleMessage(job: Job) {
     const { message } = job.data;
-    await this.chatService.handleIncomingMessage(message);
-    await this.chatGateway.handleNewMessage(message)
+    console.log("message identified", message)
+    const savedMessage = await this.chatService.handleIncomingMessage(message);
+    await this.chatGateway.handleNewMessage(savedMessage)
   }
 }
