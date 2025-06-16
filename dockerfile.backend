@@ -1,7 +1,7 @@
 FROM node:22-slim
 
 WORKDIR /app
-COPY . .
+COPY ./backend .
 RUN apt-get update -y && apt-get install -y openssl && npm install && npm install -g @nestjs/cli
 
 CMD ["sh", "-c", "npx prisma migrate deploy && nest start"]
