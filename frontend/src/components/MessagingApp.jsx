@@ -4,7 +4,6 @@ import { Send, User, Search, Phone, Video, MoreVertical } from 'lucide-react';
 import { gql, useMutation, useLazyQuery } from '@apollo/client';
 import './MessagingApp.css';
 
-const SOCKET_URL = 'http://localhost:4000';
 const GET_USERS = gql`
   query {
     users {
@@ -34,7 +33,6 @@ const MessagingApp = ({ user, onLogout }) => {
   const [chats, setChats] = useState([]);
   const [users, setUsers] = useState([]);
   const [avatar, setAvatar] = useState('👥');
-  const [socket, setSocket] = useState(null);
   const userId = localStorage.getItem('userid');
 
   const [createChat] = useMutation(CREATE_CHAT);
@@ -65,32 +63,6 @@ const MessagingApp = ({ user, onLogout }) => {
       },
     });
   };
-
-  useEffect(() => {
-    const sock = io(SOCKET_URL, { query: { userid: user?.id } });
-    setSocket(sock);
-
-    sock.on('chat:init', (data) => {
-      setMessages(data.messages);
-      setChats(data.chats);
-      setUsers(data.users);
-    });
-
-    sock.on('chat:newmessage', (message) => {
-      setMessages(prev => [...prev, message]);
-    });
-
-    sock.on('connect', () => {
-      // Optionally handle connection
-    });
-    sock.on('disconnect', () => {
-      // Optionally handle disconnect
-    });
-
-    return () => {
-      sock.disconnect();
-    };
-  }, [user]);
 
   // Group messages by chatId for efficient lookup
   const messagesByChat = messages.reduce((acc, msg) => {
