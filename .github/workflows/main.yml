@@ -82,3 +82,80 @@ jobs:
             cat response.txt
             exit 1
           fi
+
+#   front_build:
+#     name: Build Frontend project
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+  
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: 22
+
+#       - name: Install dependencies
+#         working-directory: frontend
+#         run: npm install
+
+#       - name: Run build
+#         working-directory: frontend
+#         run: npm run build
+
+#   front_test:
+#     name: Run Unit Tests
+#     runs-on: ubuntu-latest
+#     needs: back_build
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: 22
+
+#       - name: Install dependencies
+#         working-directory: backend
+#         run: npm install
+
+#       - name: Run tests
+#         working-directory: backend
+#         run: npm run test
+
+  front_deploy:
+    name: Build and Deploy frontend to Render
+    runs-on: ubuntu-latest
+#    needs: front_build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker image
+        run: docker build -t efreisocialnetwork/socialnetworkfrontend:latest -f dockerfile.frontend .
+
+      - name: Push Docker image
+        run: docker push efreisocialnetwork/socialnetworkfrontend:latest
+
+      - name: Trigger Deploy on Render
+        run: |
+          response=$(curl -s -w "%{http_code}" -o response.txt \
+            -X POST "https://api.render.com/deploy/srv-d17vd9odl3ps7398tl0g?key=${{secrets.RENDER_FRONT_API_KEY}}")
+
+          if [ "$response" -ge 200 ] && [ "$response" -lt 300 ]; then
+            echo "✅ Deploy triggered successfully (HTTP $response)"
+          else
+            echo "❌ Render deploy failed with HTTP status $response"
+            cat response.txt
+            exit 1
+          fi
