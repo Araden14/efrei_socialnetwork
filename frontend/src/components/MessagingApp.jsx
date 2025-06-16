@@ -3,7 +3,6 @@ import { io } from 'socket.io-client';
 import { Send, User, Search, Phone, Video, MoreVertical } from 'lucide-react';
 import { gql, useMutation, useLazyQuery } from '@apollo/client';
 import './MessagingApp.css';
-import { gql, useMutation } from '@apollo/client';
 
 const SOCKET_URL = 'http://localhost:4000';
 const GET_USERS = gql`
