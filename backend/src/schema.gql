@@ -65,8 +65,8 @@ input CreateChatInput {
 }
 
 input CreateMessageInput {
-  userId: Int!
-  chatId: Int!
+  userid: Int!
+  chatid: Int!
   content: String!
 }
 

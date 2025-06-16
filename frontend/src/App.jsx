@@ -4,6 +4,7 @@ import MessagingApp from './components/MessagingApp'
 import Login from './components/Login'
 import Register from './components/Register'
 import './App.css'
+import WebSocketComponent from './components/websocket'
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -42,6 +43,10 @@ function App() {
           path="*"
           element={<Navigate to={user ? "/messagerie" : "/login"} />}
         />
+        <Route
+        path="/websocket"
+        element={<WebSocketComponent />}>
+        </Route>
       </Routes>
     </BrowserRouter>
   );

@@ -1,7 +1,7 @@
 export class SendMessageDto {
-    senderid: number;
+    userid: number;
     chatid: number;
     content: string;
-    timestamp: string;
+    timestamp: Date;
   }
   

@@ -27,7 +27,7 @@ import { AuthModule } from './auth/auth.module';
     }),
     PrismaModule,
     BullModule.forRoot({
-      redis: { host: 'redis', port: 6379 },
+      redis: { host: 'localhost', port: 6379 },
     }),
     UsersModule,
     ChatModule,
