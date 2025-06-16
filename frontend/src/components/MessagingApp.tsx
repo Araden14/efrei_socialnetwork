@@ -1,14 +1,74 @@
 import React, { useState, useEffect } from 'react';
-import { io } from 'socket.io-client';
+import io from 'socket.io-client';
 import { Send, User, Search, Phone, Video, MoreVertical } from 'lucide-react';
 import { gql, useMutation, useLazyQuery } from '@apollo/client';
+import { useAuth } from '../context/authcontext';
 import './MessagingApp.css';
+import { useMessage } from '../context/messagecontext';
+
+interface MessagingAppProps {
+  user: UserType;
+  onLogout: () => void;
+}
+
+interface Message {
+  id: number;
+  content: string;
+  timestamp: string;
+  userid: number;
+  chatid: number;
+}
+
+interface UserType {
+  id: number;
+  email: string;
+  name: string;
+  posts?: Chat[];
+  Message?: Message[];
+}
+
+interface Chat {
+  id: number;
+  title: string;
+  users: UserType[];
+  Message: Message[];
+}
+
+interface CreateChatInput {
+  title: string;
+  userIds: number[];
+}
+
+interface CreateMessageInput {
+  userid: number;
+  chatid: number;
+  content: string;
+}
+
+interface CreateChatResponse {
+  createChat: Chat;
+}
+
+interface UsersQueryResponse {
+  users: UserType[];
+}
+
+interface MessagesByChat {
+  [chatId: number]: Message[];
+}
+
+interface ChatInitData {
+  messages: Message[];
+  chats: Chat[];
+  users: UserType[];
+}
 
 const GET_USERS = gql`
   query {
     users {
       id
       name
+      email
     }
   }
 `;
@@ -18,113 +78,168 @@ const CREATE_CHAT = gql`
     createChat(data: $data) {
       id
       title
-      users { id name }
+      users { id name email }
+      Message { id content timestamp userid chatId }
     }
   }
 `;
 
-const MessagingApp = ({ user, onLogout }) => {
-  const [showNewChat, setShowNewChat] = useState(false);
-  const [newChatName, setNewChatName] = useState('');
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [newMessage, setNewMessage] = useState('');
-  const [selectedUser2, setSelectedUser2] = useState('');
-  const [messages, setMessages] = useState([]);
-  const [chats, setChats] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [avatar, setAvatar] = useState('👥');
-  const userId = localStorage.getItem('userid');
+const SEND_MESSAGE_MUTATION = gql`
+  mutation SendMessage($data: CreateMessageInput!) {
+    sendMessage(data: $data) {
+      user
+      chat
+      content
+      timestamp
+    }
+  }
+`;
 
-  const [createChat] = useMutation(CREATE_CHAT);
-  const [getUsers, { data: usersData }] = useLazyQuery(GET_USERS, { fetchPolicy: 'network-only' });
+const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
+  const { user: authUser } = useAuth();
+  const { messages, setMessages, chats, setChats, users, setUsers } = useMessage();
+  const [showNewChat, setShowNewChat] = useState<boolean>(false);
+  const [newChatName, setNewChatName] = useState<string>('');
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [newMessage, setNewMessage] = useState<string>('');
+  const [selectedUser2, setSelectedUser2] = useState<string>('');
+  const [avatar] = useState<string>('👥');
+  const [socket, setSocket] = useState<any | null>(io('http://localhost:4000', {
+    query: { userid: authUser?.id }
+  }));
+  const [createChat] = useMutation<CreateChatResponse, { data: CreateChatInput }>(CREATE_CHAT);
+  const [getUsers, { data: usersData }] = useLazyQuery<UsersQueryResponse>(GET_USERS, { fetchPolicy: 'network-only' });
+  const [sendMessage] = useMutation<any, { data: CreateMessageInput }>(SEND_MESSAGE_MUTATION);
 
-  const handleShowNewChat = () => {
+  socket.on('connect', () => {
+      console.log('Connected to WebSocket server');
+    });
+
+  socket.on('disconnect', () => {
+      console.log('Disconnected from WebSocket server');
+    });
+
+  socket.on('chat:init', (data: ChatInitData) => {
+    console.log('Received chat:init:', data);
+    if (data.messages) setMessages(data.messages);
+    if (data.chats) setChats(data.chats);
+    if (data.users) setUsers(data.users);
+  });
+
+  socket.on('chat:newmessage', (message: Message) => {
+    console.log('Received chat:newmessage:', message);
+    setMessages([...messages, message]);
+    console.log(messages.length)
+  });
+
+  socket.on('chat:newchat', (chat: Chat) => {
+    console.log('Received chat:newchat:', chat);
+    setChats([...chats, chat]);
+  });
+
+  const handleShowNewChat = (): void => {
     setShowNewChat(true);
     getUsers();
   };
 
+  const handleSendMessage = async (): Promise<void> => {
+    if (!newMessage.trim() || !selectedChat) return;
 
-  const SEND_MESSAGE_MUTATION = gql`
-    mutation SendMessage($data: CreateMessageInput!) {
-      sendMessage(data: $data)
-    }
-  `;
-  const [sendMessage] = useMutation(SEND_MESSAGE_MUTATION);
-
-  const handleSendMessage = () => {
-    sendMessage({
+    const result = await sendMessage({
       variables: {
         data: {
           chatid: selectedChat.id,
-          userid: user?.id,
+          userid: parseInt(authUser?.id || '0'),
           content: newMessage,
-          timestamp: new Date().toISOString(),
         },
       },
     });
+    console.log(result)
   };
 
   // Group messages by chatId for efficient lookup
-  const messagesByChat = messages.reduce((acc, msg) => {
+  const messagesByChat: MessagesByChat = messages.reduce((acc, msg) => {
     if (!acc[msg.chatid]) acc[msg.chatid] = [];
     acc[msg.chatid].push(msg);
     return acc;
-  }, {});
+  }, {} as MessagesByChat);
 
-  const handleDeleteChat = (chatId) => {
+  const handleDeleteChat = (chatId: number): void => {
     setChats(chats.filter(chat => chat.id !== chatId));
     if (selectedChat && selectedChat.id === chatId) {
       setSelectedChat(null);
     }
   };
 
-  const handleLogout = async () => { 
+  const handleLogout = async (): Promise<void> => { 
     localStorage.removeItem('token');
     localStorage.removeItem('userid');
     if (onLogout) onLogout();
   };
 
-  const handleCreateChat = async (e) => {
+  const handleCreateChat = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     if (!newChatName.trim() || !selectedUser2) return;
 
-    if (parseInt(userId) === parseInt(selectedUser2)) {
+    if (parseInt(authUser?.id || '0') === parseInt(selectedUser2)) {
       alert("Vous ne pouvez pas créer une conversation avec vous-même.");
       return;
     }
 
-    await createChat({
-      variables: {
-        data: {
-          title: newChatName,
-          userIds: [parseInt(userId), parseInt(selectedUser2)],
+    try {
+      const result = await createChat({
+        variables: {
+          data: {
+            title: newChatName,
+            userIds: [parseInt(authUser?.id || '0'), parseInt(selectedUser2)],
+          }
         }
-      }
-    });
+      });
 
-    setShowNewChat(false);
-    setNewChatName('');
-    setSelectedUser2('');
+      if (result.data?.createChat) {
+        setChats([...chats, result.data!.createChat]);
+      }
+
+      setShowNewChat(false);
+      setNewChatName('');
+      setSelectedUser2('');
+    } catch (error) {
+      console.error('Error creating chat:', error);
+    }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter') handleSendMessage();
   };
 
-  // When a chat is selected, set the selectedChat object
-  const handleSelectChat = (chat) => setSelectedChat(chat);
+  const handleSelectChat = (chat: Chat): void => setSelectedChat(chat);
 
-  // Get sorted messages for selected chat
-  const getChatMessages = (chatId) => {
+  const getChatMessages = (chatId: number): Message[] => {
     const msgs = messagesByChat[chatId] || [];
-    return [...msgs].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    return [...msgs].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  };
+
+  const handleNewChatNameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setNewChatName(e.target.value);
+  };
+
+  const handleSelectedUser2Change = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+    setSelectedUser2(e.target.value);
+  };
+
+  const handleNewMessageChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setNewMessage(e.target.value);
+  };
+
+  const handleCancelNewChat = (): void => {
+    setShowNewChat(false);
   };
 
   return (
     <div className="messaging-app">
       {/* Affichage de l'id utilisateur connecté */}
       <div style={{position: 'absolute', top: 10, right: 20, fontSize: 13, color: '#888'}}>
-        ID utilisateur connecté : <b>{userId}</b>
+        ID utilisateur connecté : <b>{authUser?.id}</b>
       </div>
       {/* Sidebar */}
       <div className="sidebar">
@@ -158,26 +273,26 @@ const MessagingApp = ({ user, onLogout }) => {
               type="text"
               placeholder="Nom de la conversation"
               value={newChatName}
-              onChange={e => setNewChatName(e.target.value)}
+              onChange={handleNewChatNameChange}
               style={{ marginRight: 8, padding: 4 }}
               required
             />
              <select
               value={selectedUser2}
-              onChange={e => setSelectedUser2(e.target.value)}
+              onChange={handleSelectedUser2Change}
               required
               style={{ marginRight: 8, padding: 4, marginTop: 10 }}
             >
               <option value="">Sélectionner un utilisateur</option>
               {usersData?.users
-                ?.filter(u => String(u.id) !== String(userId))
+                ?.filter(u => String(u.id) !== String(authUser?.id))
                 .map(u => (
                   <option key={u.id} value={u.id}>{u.name}</option>
                 ))}
             </select>
             <div>
               <button type="submit" style={{ height: 27.5 }} >Créer</button>
-              <button type="button" onClick={() => setShowNewChat(false)} style={{ marginLeft: 4 }}>Annuler</button>
+              <button type="button" onClick={handleCancelNewChat} style={{ marginLeft: 4 }}>Annuler</button>
             </div>
           </form>
         )}
@@ -191,21 +306,15 @@ const MessagingApp = ({ user, onLogout }) => {
             >
               <div className="chat-avatar-container">
                 <div className="chat-avatar">{avatar}</div>
-                {chat.online && <div className="online-indicator"></div>}
               </div>
               <div className="chat-info">
                 <div className="chat-header">
-                  <span className="chat-name">{chat.title || chat.name}</span>
-                  <span className="chat-time">{chat.timestamp}</span>
+                  <span className="chat-name">{chat.title}</span>
                 </div>
-                <p className="last-message">{chat.lastMessage}</p>
               </div>
-              {chat.unread > 0 && (
-                <div className="unread-badge">{chat.unread}</div>
-              )}
               <button
                 className="delete-chat-btn"
-                onClick={e => {
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                   e.stopPropagation();
                   handleDeleteChat(chat.id);
                 }}
@@ -225,14 +334,6 @@ const MessagingApp = ({ user, onLogout }) => {
             <div className="chat-header-bar">
               <div className="chat-user-info">
                 <div className="header-avatar-container">
-                  <div className="header-avatar">{selectedChat.avatar || avatar}</div>
-                  {selectedChat.online && <div className="online-indicator"></div>}
-                </div>
-                <div className="user-details">
-                  <h2>{selectedChat.title || selectedChat.name}</h2>
-                  <div className="status">
-                    {selectedChat.online ? 'En ligne' : 'Hors ligne'}
-                  </div>
                 </div>
               </div>
               <div className="chat-actions">
@@ -245,11 +346,16 @@ const MessagingApp = ({ user, onLogout }) => {
               {getChatMessages(selectedChat.id).map((message) => (
                 <div
                   key={message.id}
-                  className={`message ${message.userid === (user?.id || 1) ? 'message-me' : 'message-other'}`}
+                  className={`message ${message.userid === parseInt(authUser?.id || '0') ? 'message-me' : 'message-other'}`}
                 >
                   <div className="message-bubble">
                     <p>{message.content}</p>
-                    <span className="message-time">{new Date(message.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="message-time">
+                      {new Date(message.timestamp).toLocaleTimeString('fr-FR', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -258,7 +364,7 @@ const MessagingApp = ({ user, onLogout }) => {
               <input
                 type="text"
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={handleNewMessageChange}
                 onKeyPress={handleKeyPress}
                 placeholder="Tapez votre message..."
                 className="message-input"
@@ -282,4 +388,4 @@ const MessagingApp = ({ user, onLogout }) => {
   );
 };
 
-export default MessagingApp;
+export default MessagingApp; 

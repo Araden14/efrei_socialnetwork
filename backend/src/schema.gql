@@ -32,6 +32,13 @@ type User {
   Message: [Message!]
 }
 
+type SendMessageResponse {
+  user: Int!
+  chat: Int!
+  content: String!
+  timestamp: DateTime!
+}
+
 type AuthPayload {
   access_token: String!
 }
@@ -42,13 +49,14 @@ type Query {
   chats: [Chat!]!
   chat(id: Int!): Chat
   messages(chatId: Int!): [Message!]!
+  verifyToken(access_token: String!): User!
 }
 
 type Mutation {
   createUser(data: CreateUserInput!): User!
   createChat(data: CreateChatInput!): Chat!
   addUserToChat(chatId: Int!, userId: Int!): Chat!
-  sendMessage(data: CreateMessageInput!): Boolean!
+  sendMessage(data: CreateMessageInput!): SendMessageResponse!
   register(data: CreateUserInput!): AuthPayload!
   login(data: LoginInput!): AuthPayload!
 }

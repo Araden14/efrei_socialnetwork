@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
+  import { Injectable, BadRequestException, UnauthorizedException, InternalServerErrorException, Res } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { CreateUserInput } from 'src/users/dto/create-user.input';
@@ -11,7 +11,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(createUserInput: CreateUserInput) {
+  async register(createUserInput: CreateUserInput, res: any) {
     try {
       const existingUser = await this.usersService.findByEmailWithPassword(createUserInput.email);
       if (existingUser) throw new BadRequestException('Email already in use');
@@ -25,12 +25,30 @@ export class AuthService {
       if (!user) throw new InternalServerErrorException('User registration failed');
 
       const payload = { username: user.email, sub: user.id };
-      return {
-        access_token: await this.jwtService.signAsync(payload),
-      };
+      const token = await this.jwtService.signAsync(payload); 
+      if (res) {
+        res.cookie('access_token', token, {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 7 * 24 * 60 * 60 * 1000, 
+        });
+      }
+      return { access_token: token };
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException('Registration error');
+    }
+  }
+
+  async verifyToken(token: string) {
+    try {
+      const decoded = await this.jwtService.verifyAsync(token);
+      // get user from database
+      const user = await this.usersService.findById(decoded.sub);
+      return user;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid token');
     }
   }
 
@@ -51,15 +69,21 @@ export class AuthService {
     }
   }
 
-  async login(user: any) {
-    if (!user || !user.email || !user.id) {
+  async login(user: any, res: any) {
+    if (!user || !user.email || !user.id)
       throw new BadRequestException('Invalid user data for login');
-    }
     try {
       const payload = { username: user.email, sub: user.id };
-      return {
-        access_token: await this.jwtService.signAsync(payload),
-      };
+      const token = await this.jwtService.signAsync(payload);
+      if (res) {
+        res.cookie('access_token', token, {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 7 * 24 * 60 * 60 * 1000, 
+        });
+      }
+      return { access_token: token };
     } catch {
       throw new InternalServerErrorException('Login error');
     }

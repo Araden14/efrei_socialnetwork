@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { gql, useMutation } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
+import type { RegisterProps, RegisterData, AuthResponse } from '../types';
 
 const REGISTER_MUTATION = gql`
   mutation Register($data: CreateUserInput!) {
@@ -11,11 +12,16 @@ const REGISTER_MUTATION = gql`
   }
 `;
 
-const Register = ({ onRegister }) => {
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
-  const [register, { data, loading, error }] = useMutation(REGISTER_MUTATION);
+interface RegisterMutationResponse {
+  register: AuthResponse;
+}
+
+const Register: React.FC<RegisterProps> = ({ onRegister }) => {
+  const [email, setEmail] = useState<string>('');
+  const [name, setName] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  
+  const [register, { data, loading, error }] = useMutation<RegisterMutationResponse, { data: RegisterData }>(REGISTER_MUTATION);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,11 +36,23 @@ const Register = ({ onRegister }) => {
     }
   }, [data, navigate, onRegister, email, name]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (email.trim() && name.trim() && password.trim()) {
       await register({ variables: { data: { email, name, password } } });
     }
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setName(e.target.value);
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
   };
 
   return (
@@ -48,19 +66,19 @@ const Register = ({ onRegister }) => {
           type="text"
           placeholder="Nom"
           value={name}
-          onChange={e => setName(e.target.value)}
+          onChange={handleNameChange}
         />
         <input
           type="email"
           placeholder="Adresse email"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={handleEmailChange}
         />
         <input
           type="password"
           placeholder="Mot de passe"
           value={password}
-          onChange={e => setPassword(e.target.value)}
+          onChange={handlePasswordChange}
         />
         <button type="submit" disabled={loading}>S'inscrire</button>
         {error && <div style={{ color: 'red', marginTop: 8 }}>{error.message}</div>}
@@ -70,4 +88,4 @@ const Register = ({ onRegister }) => {
   );
 };
 
-export default Register;
+export default Register; 

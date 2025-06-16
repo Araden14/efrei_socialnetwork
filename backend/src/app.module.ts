@@ -24,6 +24,7 @@ import { AuthModule } from './auth/auth.module';
           includeCookies: true,
         }),
       ],
+      context: ({ req, res }) => ({ req, res }),
     }),
     PrismaModule,
     BullModule.forRoot({

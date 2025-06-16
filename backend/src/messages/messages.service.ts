@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import { SendMessageResponse } from './dto/send-message.response';
 
 @Injectable()
 export class MessagesService {
@@ -10,7 +11,7 @@ export class MessagesService {
   ) {}
 
   /**
-   * Récupère tous les messages d’un chat (chatId), triés par `timestamp` croissant, 
+   * Récupère tous les messages d'un chat (chatId), triés par `timestamp` croissant, 
    * avec la relation `user` et `chat`.
    */
   async getMessages(chatid: number) {
@@ -29,13 +30,19 @@ export class MessagesService {
     userid: number,
     chatid: number,
     content: string,
-  ): Promise<boolean> {
+  ): Promise<SendMessageResponse> {
+    const timestamp = new Date();
     await this.redisService.addMessageToQueue({
       userid: userid,
       chatid: chatid,
       content: content,
-      timestamp: new Date()
+      timestamp: timestamp
     });
-    return true;
+    return {
+      user: userid,
+      chat: chatid,
+      content: content,
+      timestamp: timestamp
+    };
   }
 }

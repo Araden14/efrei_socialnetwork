@@ -2,6 +2,7 @@ import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
 import { MessagesService } from './messages.service';
 import { Message } from './models/message.model';
 import { CreateMessageInput } from './dto/create-message.input';
+import { SendMessageResponse } from './dto/send-message.response';
 
 @Resolver(() => Message)
 export class MessagesResolver {
@@ -23,7 +24,7 @@ export class MessagesResolver {
     //      chat?: { id: number; title: string; createdAt: Date; };
     //    }>
 
-    // 2) On mappe chaque objet pour qu’il corresponde au type GraphQL Message
+    // 2) On mappe chaque objet pour qu'il corresponde au type GraphQL Message
     return rawMessages.map(m => ({
       id:        m.id,
       content:   m.content,
@@ -35,10 +36,10 @@ export class MessagesResolver {
     }));
   }
 
-  @Mutation(() => Boolean, { name: 'sendMessage' })
+  @Mutation(() => SendMessageResponse, { name: 'sendMessage' })
   async sendMessage(
     @Args('data') data: CreateMessageInput,
-  ): Promise<boolean> {
+  ): Promise<SendMessageResponse> {
     return this.messagesService.sendMessageToQueue(
       data.userid,
       data.chatid,

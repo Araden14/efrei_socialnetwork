@@ -132,9 +132,19 @@ const prisma = new PrismaClient();
           users: true,
         },
       });
+      // get the user object from the message
+      const user = await prisma.user.findUnique({
+        where: {
+          id: message.userid,
+        },
+      });
       // get the other userid associated with the chat
       const otherUserId = chat?.users?.find(user => user.id !== message.userid);
       // send the message to the other user
+
+      if (user) {
+        this.emitToUser(user.id, 'chat:newmessage', message);
+      }
       if (otherUserId) {
         this.emitToUser(otherUserId.id, 'chat:newmessage', message);
       }

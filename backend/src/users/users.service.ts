@@ -18,6 +18,13 @@ export class UsersService {
     });
   }
 
+  async findById(id: number) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, email: true, name: true },
+    });
+  } 
+
   async findAll() {
     return this.prisma.user.findMany({
       select: { id: true, email: true, name: true },
