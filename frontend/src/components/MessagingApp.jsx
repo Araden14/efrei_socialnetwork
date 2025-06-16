@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { Send, Search, Phone, Video, MoreVertical } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
+import { Send, User, Search, Phone, Video, MoreVertical } from 'lucide-react';
 import { gql, useMutation, useLazyQuery } from '@apollo/client';
 import './MessagingApp.css';
 
+const SOCKET_URL = 'http://localhost:4000';
 const GET_USERS = gql`
   query {
     users {
@@ -23,49 +25,17 @@ const CREATE_CHAT = gql`
 `;
 
 const MessagingApp = ({ user, onLogout }) => {
-  // Récupération de l'id du user connecté depuis le localStorage
-  const userId = localStorage.getItem('userid');
-
   const [showNewChat, setShowNewChat] = useState(false);
   const [newChatName, setNewChatName] = useState('');
-  const [selectedUser2, setSelectedUser2] = useState('');
   const [selectedChat, setSelectedChat] = useState(null);
   const [newMessage, setNewMessage] = useState('');
-  const [messages, setMessages] = useState([
-    { id: 1, chatId: 1, sender: 'Alice', content: 'Salut ! Comment ça va ?', timestamp: '10:30', isMe: false },
-    { id: 2, chatId: 1, sender: 'Moi', content: 'Ça va bien merci ! Et toi ?', timestamp: '10:32', isMe: true },
-    { id: 3, chatId: 1, sender: 'Alice', content: 'Super ! On se voit toujours ce soir ?', timestamp: '10:35', isMe: false },
-    { id: 4, chatId: 2, sender: 'Bob', content: 'Hey ! Tu as vu le match hier ?', timestamp: '09:15', isMe: false },
-    { id: 5, chatId: 2, sender: 'Moi', content: 'Oui, incroyable !', timestamp: '09:20', isMe: true },
-  ]);
-
+  const [selectedUser2, setSelectedUser2] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [chats, setChats] = useState([]);
+  const [users, setUsers] = useState([]);
   const [avatar, setAvatar] = useState('👥');
-  const [chats, setChats] = useState([
-    {
-      id: 1,
-      name: 'Alice Martin',
-      lastMessage: 'Super ! On se voit toujours ce soir ?',
-      timestamp: '10:35',
-      unread: 2,
-      online: true
-    },
-    {
-      id: 2,
-      name: 'Bob Dupont',
-      lastMessage: 'Oui, incroyable !',
-      timestamp: '09:20',
-      unread: 0,
-      online: false
-    },
-    {
-      id: 3,
-      name: 'Groupe Projet',
-      lastMessage: 'Meeting demain à 14h',
-      timestamp: 'Hier',
-      unread: 5,
-      online: true
-    }
-  ]);
+  const [socket, setSocket] = useState(null);
+  const userId = localStorage.getItem('userid');
 
   const [createChat] = useMutation(CREATE_CHAT);
   const [getUsers, { data: usersData }] = useLazyQuery(GET_USERS, { fetchPolicy: 'network-only' });
@@ -74,6 +44,60 @@ const MessagingApp = ({ user, onLogout }) => {
     setShowNewChat(true);
     getUsers();
   };
+
+
+  const SEND_MESSAGE_MUTATION = gql`
+    mutation SendMessage($data: CreateMessageInput!) {
+      sendMessage(data: $data)
+    }
+  `;
+  const [sendMessage] = useMutation(SEND_MESSAGE_MUTATION);
+
+  const handleSendMessage = () => {
+    sendMessage({
+      variables: {
+        data: {
+          chatid: selectedChat.id,
+          userid: user?.id,
+          content: newMessage,
+          timestamp: new Date().toISOString(),
+        },
+      },
+    });
+  };
+
+  useEffect(() => {
+    const sock = io(SOCKET_URL, { query: { userid: user?.id } });
+    setSocket(sock);
+
+    sock.on('chat:init', (data) => {
+      setMessages(data.messages);
+      setChats(data.chats);
+      setUsers(data.users);
+    });
+
+    sock.on('chat:newmessage', (message) => {
+      setMessages(prev => [...prev, message]);
+    });
+
+    sock.on('connect', () => {
+      // Optionally handle connection
+    });
+    sock.on('disconnect', () => {
+      // Optionally handle disconnect
+    });
+
+    return () => {
+      sock.disconnect();
+    };
+  }, [user]);
+
+  // Group messages by chatId for efficient lookup
+  const messagesByChat = messages.reduce((acc, msg) => {
+    if (!acc[msg.chatid]) acc[msg.chatid] = [];
+    acc[msg.chatid].push(msg);
+    return acc;
+  }, {});
 
   const handleDeleteChat = (chatId) => {
     setChats(chats.filter(chat => chat.id !== chatId));
@@ -86,31 +110,6 @@ const MessagingApp = ({ user, onLogout }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('userid');
     if (onLogout) onLogout();
-  };
-
-  const handleSendMessage = () => {
-    if (newMessage.trim() && selectedChat) {
-      const newMsg = {
-        id: messages.length + 1,
-        chatId: selectedChat.id,
-        sender: 'Moi',
-        content: newMessage,
-        timestamp: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        isMe: true
-      };
-      setMessages([...messages, newMsg]);
-      setNewMessage('');
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSendMessage();
-    }
-  };
-
-  const getChatMessages = (chatId) => {
-    return messages.filter(msg => msg.chatId === chatId);
   };
 
   const handleCreateChat = async (e) => {
@@ -134,6 +133,19 @@ const MessagingApp = ({ user, onLogout }) => {
     setShowNewChat(false);
     setNewChatName('');
     setSelectedUser2('');
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') handleSendMessage();
+  };
+
+  // When a chat is selected, set the selectedChat object
+  const handleSelectChat = (chat) => setSelectedChat(chat);
+
+  // Get sorted messages for selected chat
+  const getChatMessages = (chatId) => {
+    const msgs = messagesByChat[chatId] || [];
+    return [...msgs].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
   };
 
   return (
@@ -178,7 +190,7 @@ const MessagingApp = ({ user, onLogout }) => {
               style={{ marginRight: 8, padding: 4 }}
               required
             />
-            <select
+             <select
               value={selectedUser2}
               onChange={e => setSelectedUser2(e.target.value)}
               required
@@ -201,7 +213,7 @@ const MessagingApp = ({ user, onLogout }) => {
           {chats.map((chat) => (
             <div
               key={chat.id}
-              onClick={() => setSelectedChat(chat)}
+              onClick={() => handleSelectChat(chat)}
               className={`chat-item${selectedChat?.id === chat.id ? ' active' : ''}`}
               style={{ position: 'relative' }}
             >
@@ -211,7 +223,7 @@ const MessagingApp = ({ user, onLogout }) => {
               </div>
               <div className="chat-info">
                 <div className="chat-header">
-                  <span className="chat-name">{chat.name}</span>
+                  <span className="chat-name">{chat.title || chat.name}</span>
                   <span className="chat-time">{chat.timestamp}</span>
                 </div>
                 <p className="last-message">{chat.lastMessage}</p>
@@ -241,11 +253,11 @@ const MessagingApp = ({ user, onLogout }) => {
             <div className="chat-header-bar">
               <div className="chat-user-info">
                 <div className="header-avatar-container">
-                  <div className="header-avatar">{selectedChat.avatar}</div>
+                  <div className="header-avatar">{selectedChat.avatar || avatar}</div>
                   {selectedChat.online && <div className="online-indicator"></div>}
                 </div>
                 <div className="user-details">
-                  <h2>{selectedChat.name}</h2>
+                  <h2>{selectedChat.title || selectedChat.name}</h2>
                   <div className="status">
                     {selectedChat.online ? 'En ligne' : 'Hors ligne'}
                   </div>
@@ -261,11 +273,11 @@ const MessagingApp = ({ user, onLogout }) => {
               {getChatMessages(selectedChat.id).map((message) => (
                 <div
                   key={message.id}
-                  className={`message ${message.isMe ? 'message-me' : 'message-other'}`}
+                  className={`message ${message.userid === (user?.id || 1) ? 'message-me' : 'message-other'}`}
                 >
                   <div className="message-bubble">
                     <p>{message.content}</p>
-                    <span className="message-time">{message.timestamp}</span>
+                    <span className="message-time">{new Date(message.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                 </div>
               ))}
