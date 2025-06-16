@@ -74,3 +74,11 @@ input LoginInput {
   email: String!
   password: String!
 }
+
+query Me {
+  me {
+    id
+    email
+    name
+  }
+}

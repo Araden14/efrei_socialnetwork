@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Login.css';
 import { Link } from 'react-router-dom';
-import { gql, useMutation } from '@apollo/client';
+import { gql, useMutation, useLazyQuery } from '@apollo/client';
 
 const LOGIN_MUTATION = gql`
   mutation Login($data: LoginInput!) {
@@ -11,19 +11,40 @@ const LOGIN_MUTATION = gql`
   }
 `;
 
+const USERS_QUERY = gql`
+  query {
+    users {
+      id
+      email
+      name
+    }
+  }
+`;
+
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [login, { data, loading, error }] = useMutation(LOGIN_MUTATION);
+  const [getUsers, { data: usersData }] = useLazyQuery(USERS_QUERY);
 
   useEffect(() => {
     if (data && data.login && data.login.access_token) {
       localStorage.setItem('token', data.login.access_token);
-      if (onLogin) {
-        onLogin({ token: data.login.access_token, email });
+      getUsers(); // On récupère la liste des users
+    }
+  }, [data, getUsers]);
+
+  useEffect(() => {
+    if (usersData && usersData.users) {
+      const user = usersData.users.find(u => u.email === email);
+      if (user) {
+        localStorage.setItem('userid', user.id);
+        if (onLogin) {
+          onLogin({ token: localStorage.getItem('token'), email });
+        }
       }
     }
-  }, [data, onLogin, email]);
+  }, [usersData, onLogin, email]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,13 +74,12 @@ const Login = ({ onLogin }) => {
         />
         <button type="submit" disabled={loading}>Se connecter</button>
         {error && <div style={{ color: 'red', marginTop: 8 }}>{error.message}</div>}
-              <p style={{textAlign: "center", marginTop: 10}}>
-        <Link to="/register" style={{ color: "#2563eb", textDecoration: "underline" }}>
-          Créer un compte
-        </Link>
-      </p>
+        <p style={{textAlign: "center", marginTop: 10}}>
+          <Link to="/register" style={{ color: "#2563eb", textDecoration: "underline" }}>
+            Créer un compte
+          </Link>
+        </p>
       </form>
-
     </div>
   );
 };

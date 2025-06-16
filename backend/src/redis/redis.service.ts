@@ -11,24 +11,21 @@ const prisma = new PrismaClient();
 @Injectable()
 export class RedisService {
   private readonly chatQueue: Queue;
-  constructor() {
-    const connection = new IORedis(
-        {
-            host: 'redis-alpine-38dm.onrender.com',
-            port: 6379,
-        }
-    );
-    
-    this.chatQueue = new Queue('chat', {
+    constructor() {
+        const connection = new IORedis(
+        'rediss://red-d10076fdiees73fal000:C5xnVyu8iqhWJE6Gd2TywATPHkNoYF3E@frankfurt-keyvalue.render.com:6379'
+        );
+        
+        this.chatQueue = new Queue('chat', {
         connection,
-      });
-      console.log("Redis ✅")
+        });
+        console.log("Redis ✅")
     }
-    
-    // Ecriture d'un message sur db et redis
-    async addMessageToQueue(message: SendMessageDto) {
-        await this.chatQueue.add('newMessage', { message });
-    }
+        
+        // Ecriture d'un message sur db et redis
+        async addMessageToQueue(message: SendMessageDto) {
+            await this.chatQueue.add('newMessage', { message });
+        }
 
     async removeMessageFromQueue(messageid: number): Promise<boolean> {
         try {
