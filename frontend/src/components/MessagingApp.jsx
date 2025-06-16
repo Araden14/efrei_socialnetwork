@@ -1,22 +1,64 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { Send, User, Search, Phone, Video, MoreVertical } from 'lucide-react';
+import { gql, useMutation, useLazyQuery } from '@apollo/client';
 import './MessagingApp.css';
 import { gql, useMutation } from '@apollo/client';
 
 const SOCKET_URL = 'http://localhost:4000';
+<<<<<<< HEAD
+const GET_USERS = gql`
+  query {
+    users {
+      id
+      name
+    }
+  }
+`;
+
+const CREATE_CHAT = gql`
+  mutation CreateChat($data: CreateChatInput!) {
+    createChat(data: $data) {
+      id
+      title
+      users { id name }
+    }
+  }
+`;
+=======
+>>>>>>> 2948b603b35e5c1af634dc1af9a70164b34cf2ba
 
 const MessagingApp = ({ user, onLogout }) => {
   const [showNewChat, setShowNewChat] = useState(false);
   const [newChatName, setNewChatName] = useState('');
   const [selectedChat, setSelectedChat] = useState(null);
   const [newMessage, setNewMessage] = useState('');
+<<<<<<< HEAD
+  const [selectedUser2, setSelectedUser2] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [chats, setChats] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [avatar, setAvatar] = useState('👥');
+  const [socket, setSocket] = useState(null);
+  const userId = localStorage.getItem('userid');
+
+  const [createChat] = useMutation(CREATE_CHAT);
+  const [getUsers, { data: usersData }] = useLazyQuery(GET_USERS, { fetchPolicy: 'network-only' });
+
+  const handleShowNewChat = () => {
+    setShowNewChat(true);
+    getUsers();
+  };
+
+
+=======
   const [messages, setMessages] = useState([]);
   const [chats, setChats] = useState([]);
   const [users, setUsers] = useState([]);
   const [avatar] = useState('👥'); // Default avatar
   const [socket, setSocket] = useState(null);
 
+>>>>>>> 2948b603b35e5c1af634dc1af9a70164b34cf2ba
   const SEND_MESSAGE_MUTATION = gql`
     mutation SendMessage($data: CreateMessageInput!) {
       sendMessage(data: $data)
@@ -79,7 +121,34 @@ const MessagingApp = ({ user, onLogout }) => {
 
   const handleLogout = async () => { 
     localStorage.removeItem('token');
+    localStorage.removeItem('userid');
     if (onLogout) onLogout();
+<<<<<<< HEAD
+  };
+
+  const handleCreateChat = async (e) => {
+    e.preventDefault();
+    if (!newChatName.trim() || !selectedUser2) return;
+
+    if (parseInt(userId) === parseInt(selectedUser2)) {
+      alert("Vous ne pouvez pas créer une conversation avec vous-même.");
+      return;
+    }
+
+    await createChat({
+      variables: {
+        data: {
+          title: newChatName,
+          userIds: [parseInt(userId), parseInt(selectedUser2)],
+        }
+      }
+    });
+
+    setShowNewChat(false);
+    setNewChatName('');
+    setSelectedUser2('');
+=======
+>>>>>>> 2948b603b35e5c1af634dc1af9a70164b34cf2ba
   };
 
   const handleKeyPress = (e) => {
@@ -97,6 +166,10 @@ const MessagingApp = ({ user, onLogout }) => {
 
   return (
     <div className="messaging-app">
+      {/* Affichage de l'id utilisateur connecté */}
+      <div style={{position: 'absolute', top: 10, right: 20, fontSize: 13, color: '#888'}}>
+        ID utilisateur connecté : <b>{userId}</b>
+      </div>
       {/* Sidebar */}
       <div className="sidebar">
         <div className="sidebar-header">
@@ -106,7 +179,7 @@ const MessagingApp = ({ user, onLogout }) => {
           </button>
           <button
             className="new-chat-btn"
-            onClick={() => setShowNewChat(true)}
+            onClick={handleShowNewChat}
           >
             + Nouvelle conversation
           </button>
@@ -122,6 +195,9 @@ const MessagingApp = ({ user, onLogout }) => {
         {showNewChat && (
           <form
             className="new-chat-form"
+<<<<<<< HEAD
+            onSubmit={handleCreateChat}
+=======
             onSubmit={e => {
               e.preventDefault();
               if (newChatName.trim()) {
@@ -130,6 +206,7 @@ const MessagingApp = ({ user, onLogout }) => {
                 setNewChatName('');
               }
             }}
+>>>>>>> 2948b603b35e5c1af634dc1af9a70164b34cf2ba
             style={{ padding: '10px' }}
           >
             <input
@@ -140,8 +217,23 @@ const MessagingApp = ({ user, onLogout }) => {
               style={{ marginRight: 8, padding: 4 }}
               required
             />
-            <button type="submit">Créer</button>
-            <button type="button" onClick={() => setShowNewChat(false)} style={{ marginLeft: 4 }}>Annuler</button>
+             <select
+              value={selectedUser2}
+              onChange={e => setSelectedUser2(e.target.value)}
+              required
+              style={{ marginRight: 8, padding: 4, marginTop: 10 }}
+            >
+              <option value="">Sélectionner un utilisateur</option>
+              {usersData?.users
+                ?.filter(u => String(u.id) !== String(userId))
+                .map(u => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+            </select>
+            <div>
+              <button type="submit" style={{ height: 27.5 }} >Créer</button>
+              <button type="button" onClick={() => setShowNewChat(false)} style={{ marginLeft: 4 }}>Annuler</button>
+            </div>
           </form>
         )}
         <div className="chat-list">
