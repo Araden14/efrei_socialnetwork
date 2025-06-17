@@ -54,6 +54,7 @@ type Query {
 
 type Mutation {
   createUser(data: CreateUserInput!): User!
+  deleteChat(id: Int!): Chat!
   createChat(data: CreateChatInput!): Chat!
   addUserToChat(chatId: Int!, userId: Int!): Chat!
   sendMessage(data: CreateMessageInput!): SendMessageResponse!

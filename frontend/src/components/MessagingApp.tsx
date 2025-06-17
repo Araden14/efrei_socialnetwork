@@ -32,6 +32,7 @@ interface Chat {
   title: string;
   users: UserType[];
   Message: Message[];
+  otherUser?: UserType;
 }
 
 interface CreateChatInput {
@@ -73,6 +74,14 @@ const GET_USERS = gql`
   }
 `;
 
+const DELETE_CHAT = gql`
+  mutation DeleteChat($id: Int!) {
+    deleteChat(id: $id) {
+      id
+    }
+  }
+`;
+
 const CREATE_CHAT = gql`
   mutation CreateChat($data: CreateChatInput!) {
     createChat(data: $data) {
@@ -109,7 +118,7 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
   const [createChat] = useMutation<CreateChatResponse, { data: CreateChatInput }>(CREATE_CHAT);
   const [getUsers, { data: usersData }] = useLazyQuery<UsersQueryResponse>(GET_USERS, { fetchPolicy: 'network-only' });
   const [sendMessage] = useMutation<any, { data: CreateMessageInput }>(SEND_MESSAGE_MUTATION);
-
+  const [deleteChat] = useMutation<any, { id: number }>(DELETE_CHAT);
   useEffect(() => {
     // Initialize socket connection
     const newSocket = io('http://localhost:4000', {
@@ -130,6 +139,7 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
     newSocket.on('chat:init', (data: ChatInitData) => {
       console.log('Received chat:init:', data);
       if (data.messages) setMessages(data.messages);
+      if (data.users) setUsers(data.users)
       if (data.chats){
         const newChats = data.chats.map(chat => {
           const otherUser = data.users.find(user => user.id !== chat.users[0].id);
@@ -149,7 +159,19 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
 
     newSocket.on('chat:newchat', (chat: Chat) => {
       console.log('Received chat:newchat:', chat);
-      setChats((prev: Chat[]) => [...prev, chat]);
+      // @ts-ignore
+      const otherUserId = chat.users.find(user => user.id !== authUser?.id);
+      console.log(otherUserId);
+      if (otherUserId) {
+        // @ts-ignore
+        const otherUserInfo = retrieveUserinfo(otherUserId);
+        const newChat = {
+          ...chat,
+          otherUser: otherUserInfo
+        };
+        console.log(newChat);
+        setChats(prevChats => [...prevChats, newChat]);
+      }
     });
 
     // Cleanup on component unmount
@@ -190,7 +212,12 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
     return acc;
   }, {} as MessagesByChat);
 
+  const retrieveUserinfo = (userid: number): UserType | undefined => {
+    return users.find(user => user.id === userid);
+  };
+
   const handleDeleteChat = (chatId: number): void => {
+    deleteChat({ variables: { id: chatId } }); 
     setChats(chats.filter(chat => chat.id !== chatId));
     if (selectedChat && selectedChat.id === chatId) {
       setSelectedChat(null);
@@ -221,11 +248,6 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
           }
         }
       });
-
-      if (result.data?.createChat) {
-        setChats([...chats, result.data!.createChat]);
-      }
-
       setShowNewChat(false);
       setNewChatName('');
       setSelectedUser2('');
@@ -359,6 +381,7 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
         {selectedChat ? (
           <>
             <div className="chat-header-bar">
+              <h3>{selectedChat.title} - {selectedChat.otherUser.name}</h3>
               <div className="chat-user-info">
                 <div className="header-avatar-container">
                 </div>

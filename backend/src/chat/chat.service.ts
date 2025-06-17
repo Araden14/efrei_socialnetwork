@@ -69,6 +69,18 @@ export class ChatService {
     });
   }
 
+  async deleteChat(chatid: number) {
+    // Delete related messages first
+    await this.prisma.message.deleteMany({
+      where: { chatid },
+    });
+
+    // Then delete the chat
+    return this.prisma.chat.delete({
+      where: { id: chatid },
+    });
+  }
+
   async addUserToChat(chatId: number, userId: number) {
     return this.prisma.chat.update({
       where: { id: chatId },

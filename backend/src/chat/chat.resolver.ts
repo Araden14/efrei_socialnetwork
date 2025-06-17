@@ -13,6 +13,12 @@ export class ChatResolver {
     private readonly chatGateway: ChatGateway,
   ) {}
 
+  // delete chat
+  @Mutation(() => Chat)
+  async deleteChat(@Args('id', { type: () => Int }) id: number) {
+    return await this.chatsService.deleteChat(id);
+  }
+
   @Query(() => [Chat], { name: 'chats' })
   async chats() {
     return this.chatsService.findAll();
