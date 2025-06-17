@@ -77,10 +77,10 @@ export class AuthService {
       const token = await this.jwtService.signAsync(payload);
       if (res) {
         res.cookie('access_token', token, {
-          httpOnly: false,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 7 * 24 * 60 * 60 * 1000, 
+          httpOnly: true, 
+          secure: true,
+          sameSite: 'none',
+          maxAge: 7 * 24 * 60 * 60 * 1000
         });
       }
       return { access_token: token };
