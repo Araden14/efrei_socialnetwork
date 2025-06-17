@@ -2,8 +2,11 @@ FROM node:22-slim AS builder
 
 WORKDIR /app
 COPY ./frontend .
+
+ARG VITE_API_HOST
+ENV VITE_API_HOST=$VITE_API_HOST
+
 RUN npm install && npm run build
-RUN ls -la /app/dist
 
 FROM nginx:stable-alpine
 

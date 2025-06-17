@@ -142,7 +142,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker build -t efreisocialnetwork/socialnetworkfrontend:latest -f dockerfile.frontend .
+        run: docker build --build-arg VITE_API_HOST=${{secrets.VITE_API_HOST}} -t efreisocialnetwork/socialnetworkfrontend:latest -f dockerfile.frontend .
 
       - name: Push Docker image
         run: docker push efreisocialnetwork/socialnetworkfrontend:latest
