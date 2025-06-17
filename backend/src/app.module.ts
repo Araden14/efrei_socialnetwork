@@ -15,6 +15,7 @@ import { AuthModule } from './auth/auth.module';
 const redisUrl = new URL(
   `${process.env.REDIS_HOST_EXTERNAL}:${process.env.REDIS_PORT ?? 6379}`,
 );
+console.log(process.env.REDIS_HOST_EXTERNAL);
 
 @Module({
   imports: [
@@ -37,7 +38,6 @@ const redisUrl = new URL(
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
         port: parseInt(redisUrl.port ?? 6379, 10),
         password: redisUrl.password,
-        tls: {},
       },
     }),
     UsersModule,
