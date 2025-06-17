@@ -8,6 +8,7 @@ async function bootstrap() {
   // Autorise les requêtes venant du front
   app.enableCors({
     origin: process.env.CLIENT_HOST,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true, // si tu utilises des cookies ou l’authentification
   });
 
