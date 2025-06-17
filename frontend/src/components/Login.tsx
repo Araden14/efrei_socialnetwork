@@ -29,6 +29,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     if (email.trim() && password.trim()) {
       await login({ email, password });
+      navigate('/')
     }
   };
 

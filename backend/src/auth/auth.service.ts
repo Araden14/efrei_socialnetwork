@@ -30,6 +30,7 @@ export class AuthService {
       res.cookie('access_token', token, {
         httpOnly: true, 
         secure: true,
+        partitioned: true,
         sameSite: 'none',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
@@ -79,6 +80,7 @@ export class AuthService {
         res.cookie('access_token', token, {
           httpOnly: true, 
           secure: true,
+          partitioned: true,
           sameSite: 'none',
           maxAge: 7 * 24 * 60 * 60 * 1000
         });
