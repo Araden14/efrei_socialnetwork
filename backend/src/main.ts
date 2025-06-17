@@ -7,7 +7,7 @@ async function bootstrap() {
 
   // Autorise les requêtes venant du front
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: process.env.CLIENT_HOST,
     credentials: true, // si tu utilises des cookies ou l’authentification
   });
 
