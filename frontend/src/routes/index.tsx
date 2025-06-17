@@ -56,17 +56,6 @@ export default function AppRoutes(): React.JSX.Element {
   const { user, logout } = useAuth();
   const isAuthenticated = Boolean(user);
 
-  // Convert auth user to the format expected by MessagingApp
-  const getUserForMessaging = (): UserType => {
-    if (user) {
-      return {
-        id: parseInt(user.id),
-        name: user.name,
-        email: user.email
-      };
-    }
-    return { id: 0, name: '', email: '' };
-  };
 
   // Function to handle registration
   const handleRegister = (data: { token: string; email: string; name: string }) => {
@@ -78,8 +67,7 @@ export default function AppRoutes(): React.JSX.Element {
         path={ROUTES.MESSAGING}
         element={
           <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <MessagingApp 
-              user={getUserForMessaging()} 
+            <MessagingApp
               onLogout={logout} 
             />
           </ProtectedRoute>

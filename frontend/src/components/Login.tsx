@@ -10,19 +10,6 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState<string>('');
   const { login, verifyToken, user, setUser } = useAuth();
   const navigate = useNavigate();
-  useEffect(() => {
-    async function checkAuth() {
-      // Try to get access_token from cookies
-      const access_token = Cookies.get('access_token');
-      if (access_token) {
-        const user = await verifyToken(access_token);
-        if (user){
-          navigate('/')
-        }
-      }
-    }
-    checkAuth();
-  }, []);
 
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

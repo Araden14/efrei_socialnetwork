@@ -7,7 +7,6 @@ import './MessagingApp.css';
 import { useMessage } from '../context/messagecontext';
 
 interface MessagingAppProps {
-  user: UserType;
   onLogout: () => void;
 }
 
@@ -105,7 +104,7 @@ const SEND_MESSAGE_MUTATION = gql`
   }
 `;
 
-const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
+const MessagingApp: React.FC<MessagingAppProps> = ({ onLogout }) => {
   const { user: authUser } = useAuth();
   const { messages, setMessages, chats, setChats, users, setUsers } = useMessage();
   const [showNewChat, setShowNewChat] = useState<boolean>(false);

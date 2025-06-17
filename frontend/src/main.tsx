@@ -6,7 +6,7 @@ import { AuthProvider } from './context/authcontext';
 import { MessageProvider } from './context/messagecontext';
 
 const client = new ApolloClient({
-  uri: import.meta.env.VITE_API_HOST+"graphql",
+  uri: "http://localhost:4000/graphql",
   cache: new InMemoryCache(),
 });
 

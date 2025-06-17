@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { gql, useLazyQuery, useMutation } from '@apollo/client';
 import { redirect } from 'react-router-dom';
+import Cookies from 'js-cookie';
 
 interface AuthUser {
   id: string;
@@ -94,26 +95,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
   }
 
+  async function verifyToken(access_token: string) {
+    const { data } = await verifyTokenQuery({ variables: { access_token } });
+    setUser(data?.verifyToken || null);
+    return data?.verifyToken || null;
+  }
+
   async function login(loginInput: LoginInput) {
-    await loginMutation({
+    const { data } = await loginMutation({
       variables: { data: loginInput },
       context: { fetchOptions: { credentials: 'include' } }
     });
-    redirect("/")
-    
+
+    if (data?.login?.access_token) {
+      const user = await verifyToken(data.login.access_token);
+      Cookies.set('access_token', data.login.access_token, { path: '/', expires: 5, secure: true, sameSite: 'strict' });
+      console.log(user);
+    }
+    redirect("/");
   }
 
   function logout() {
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('userid');
+    Cookies.remove('access_token');
   }
 
-  async function verifyToken(access_token: string) {
-    const { data } = await verifyTokenQuery({ variables: { access_token } });
-    setUser(data?.verifyToken || null);
-    return data?.verifyToken || null;
-  }
+  useEffect(() => {
+    const token = Cookies.get('access_token');
+    if (token) {
+      verifyToken(token).then((user) => {
+        setUser(user);
+      });
+    }
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, logout, login, register, verifyToken, setUser }}>
