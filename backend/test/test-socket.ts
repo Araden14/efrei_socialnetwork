@@ -4,13 +4,13 @@ function getTimestamp(): string {
   return new Date().toISOString();
 }
 
-const socketUser1 = io('http://localhost:4000', {
+const socketUser1 = io(process.env.API_HOST), {
   query: {
     userid: 1,
   },
 });
 
-const socketUser2 = io('http://localhost:4000', {
+const socketUser2 = io(process.env.API_HOST), {
   query: {
     userid: 2,
   },

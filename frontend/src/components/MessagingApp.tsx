@@ -122,7 +122,7 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
   const [deleteChat] = useMutation<any, { id: number }>(DELETE_CHAT);
   useEffect(() => {
     // Initialize socket connection
-    const newSocket = io('http://localhost:4000', {
+    const newSocket = io(import.meta.env.VITE_API_HOST, {
       query: { userid: authUser?.id }
     });
 
