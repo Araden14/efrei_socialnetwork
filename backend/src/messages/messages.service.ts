@@ -32,6 +32,12 @@ export class MessagesService {
     content: string,
   ): Promise<SendMessageResponse> {
     const timestamp = new Date();
+    console.log("Sending message to queue:", {
+      userid,
+      chatid,
+      content,
+      timestamp
+    });
     await this.redisService.addMessageToQueue({
       userid: userid,
       chatid: chatid,

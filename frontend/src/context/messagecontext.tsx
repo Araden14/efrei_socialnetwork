@@ -11,6 +11,7 @@ interface Chat {
     title: string;
     users: UserType[];
     Message: Message[];
+    otherUser?: UserType
 }
 
 interface Message {
@@ -24,12 +25,12 @@ interface Message {
 
 interface MessageContextValue {
     users: UserType[]   
-    setUsers: (users: UserType[]) => void
+    setUsers: (users: UserType[] | ((prev: UserType[]) => UserType[])) => void
     chats: Chat[]
-    setChats: (chats: Chat[]) => void
+    setChats: (chats: Chat[] | ((prev: Chat[]) => Chat[])) => void
     messages: Message[]
-    setMessages: (messages: Message[]) => void
-  }
+    setMessages: (messages: Message[] | ((prev: Message[]) => Message[])) => void
+}
 const MessageContext = createContext<MessageContextValue | undefined>(undefined);
 
 export function MessageProvider({ children }: { children: React.ReactNode }) {

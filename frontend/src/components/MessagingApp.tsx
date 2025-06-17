@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import { Send, User, Search, Phone, Video, MoreVertical } from 'lucide-react';
 import { gql, useMutation, useLazyQuery } from '@apollo/client';
@@ -104,38 +104,64 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
   const [newMessage, setNewMessage] = useState<string>('');
   const [selectedUser2, setSelectedUser2] = useState<string>('');
   const [avatar] = useState<string>('👥');
-  const [socket, setSocket] = useState<any | null>(io('http://localhost:4000', {
-    query: { userid: authUser?.id }
-  }));
+  const [socket, setSocket] = useState<any | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [createChat] = useMutation<CreateChatResponse, { data: CreateChatInput }>(CREATE_CHAT);
   const [getUsers, { data: usersData }] = useLazyQuery<UsersQueryResponse>(GET_USERS, { fetchPolicy: 'network-only' });
   const [sendMessage] = useMutation<any, { data: CreateMessageInput }>(SEND_MESSAGE_MUTATION);
 
-  socket.on('connect', () => {
+  useEffect(() => {
+    // Initialize socket connection
+    const newSocket = io('http://localhost:4000', {
+      query: { userid: authUser?.id }
+    });
+
+    setSocket(newSocket);
+
+    // Socket event listeners
+    newSocket.on('connect', () => {
       console.log('Connected to WebSocket server');
     });
 
-  socket.on('disconnect', () => {
+    newSocket.on('disconnect', () => {
       console.log('Disconnected from WebSocket server');
     });
 
-  socket.on('chat:init', (data: ChatInitData) => {
-    console.log('Received chat:init:', data);
-    if (data.messages) setMessages(data.messages);
-    if (data.chats) setChats(data.chats);
-    if (data.users) setUsers(data.users);
-  });
+    newSocket.on('chat:init', (data: ChatInitData) => {
+      console.log('Received chat:init:', data);
+      if (data.messages) setMessages(data.messages);
+      if (data.chats){
+        const newChats = data.chats.map(chat => {
+          const otherUser = data.users.find(user => user.id !== chat.users[0].id);
+          return {
+            ...chat,
+            otherUser: otherUser
+          }
+        })  
+        setChats(newChats);
+      }
+    });
 
-  socket.on('chat:newmessage', (message: Message) => {
-    console.log('Received chat:newmessage:', message);
-    setMessages([...messages, message]);
-    console.log(messages.length)
-  });
+    newSocket.on('chat:newmessage', (message: Message) => {
+      console.log('Received chat:newmessage:', message);
+      setMessages((prev: Message[]) => [...prev, message]);
+    });
 
-  socket.on('chat:newchat', (chat: Chat) => {
-    console.log('Received chat:newchat:', chat);
-    setChats([...chats, chat]);
-  });
+    newSocket.on('chat:newchat', (chat: Chat) => {
+      console.log('Received chat:newchat:', chat);
+      setChats((prev: Chat[]) => [...prev, chat]);
+    });
+
+    // Cleanup on component unmount
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [authUser?.id, setMessages, setChats, setUsers]);
+
+  // Add new useEffect for scrolling
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [selectedChat, messages]);
 
   const handleShowNewChat = (): void => {
     setShowNewChat(true);
@@ -154,7 +180,7 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
         },
       },
     });
-    console.log(result)
+    setNewMessage('')
   };
 
   // Group messages by chatId for efficient lookup
@@ -310,6 +336,7 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
               <div className="chat-info">
                 <div className="chat-header">
                   <span className="chat-name">{chat.title}</span>
+                  <span className="other-user-name">{chat.otherUser?.name}</span>
                 </div>
               </div>
               <button
@@ -359,6 +386,7 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
                   </div>
                 </div>
               ))}
+              <div ref={messagesEndRef} />
             </div>
             <div className="message-input-container">
               <input
