@@ -33,6 +33,7 @@ interface Chat {
   users: UserType[];
   Message: Message[];
   otherUser?: UserType;
+  newMessage?: boolean;
 }
 
 interface CreateChatInput {
@@ -145,7 +146,8 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
           const otherUser = data.users.find(user => user.id !== chat.users[0].id);
           return {
             ...chat,
-            otherUser: otherUser
+            otherUser: otherUser,
+            newMessage: false
           }
         })  
         setChats(newChats);
@@ -155,12 +157,15 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
     newSocket.on('chat:newmessage', (message: Message) => {
       console.log('Received chat:newmessage:', message);
       setMessages((prev: Message[]) => [...prev, message]);
+      setChats(prevChats => prevChats.map(chat => 
+        chat.id === message.chatid ? { ...chat, newMessage: true } : chat
+      ));
     });
 
     newSocket.on('chat:newchat', (chat: Chat) => {
       console.log('Received chat:newchat:', chat);
       // @ts-ignore
-      const otherUserId = chat.users.find(user => user.id !== authUser?.id);
+      const otherUserId = chat.users.find(userid => userid !== authUser.id)
       console.log(otherUserId);
       if (otherUserId) {
         // @ts-ignore
@@ -381,8 +386,9 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
         {selectedChat ? (
           <>
             <div className="chat-header-bar">
-              <h3>{selectedChat.title} - {selectedChat.otherUser.name}</h3>
+              <h3>{selectedChat.title} - {selectedChat.otherUser?.name}</h3>
               <div className="chat-user-info">
+                {selectedChat.newMessage && <div className="new-message-indicator">Nouveau message</div>}
                 <div className="header-avatar-container">
                 </div>
               </div>
