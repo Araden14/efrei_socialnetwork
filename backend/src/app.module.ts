@@ -12,6 +12,10 @@ import { RedisModule } from './redis/redis.module';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { AuthModule } from './auth/auth.module';
 
+const redisUrl = new URL(
+  `${process.env.REDIS_HOST_EXTERNAL}:${process.env.REDIS_PORT ?? 6379}`,
+);
+
 @Module({
   imports: [
     GraphQLModule.forRoot<ApolloDriverConfig>({
@@ -28,7 +32,13 @@ import { AuthModule } from './auth/auth.module';
     }),
     PrismaModule,
     BullModule.forRoot({
-      redis: { host: 'localhost', port: 6379 },
+      redis: {
+        host: redisUrl.hostname,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+        port: parseInt(redisUrl.port ?? 6379, 10),
+        password: redisUrl.password,
+        tls: {},
+      },
     }),
     UsersModule,
     ChatModule,
