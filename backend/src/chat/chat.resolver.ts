@@ -36,22 +36,23 @@ export class ChatResolver {
   @Mutation(() => Chat)
   async createChat(@Args('data') data: CreateChatInput) {
     const newChat = await this.chatsService.createChat(data);
-    
+
     // Emit WebSocket event to all users in the chat
     if (newChat.users && newChat.users.length > 0) {
-      const chatData = {
-        id: newChat.id,
-        title: newChat.title,
-        users: newChat.users.map(user => user.id),
-        createdAt: new Date().toISOString(),
-        Message: [],
-      };
-      
       newChat.users.forEach(user => {
+        const otherUser = newChat.users.find(u => u.id !== user.id);
+        const chatData = {
+          id: newChat.id,
+          title: newChat.title,
+          users: newChat.users.map(u => u.id),
+          createdAt: new Date().toISOString(),
+          Message: [],
+          otherUser: otherUser,
+        };
         this.chatGateway.emitToUser(user.id, 'chat:newchat', chatData);
       });
     }
-    
+
     return newChat;
   }
 

@@ -152,7 +152,7 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ onLogout }) => {
             otherUser: otherUser,
             newMessage: false
           }
-        })  
+        })
         setChats(newChats);
       }
     });
@@ -166,20 +166,7 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ onLogout }) => {
     });
 
     newSocket.on('chat:newchat', (chat: Chat) => {
-      console.log('Received chat:newchat:', chat);
-      // @ts-ignore
-      const otherUserId = chat.users.find(userid => userid !== authUser.id)
-      console.log(otherUserId);
-      if (otherUserId) {
-        // @ts-ignore
-        const otherUserInfo = retrieveUserinfo(otherUserId);
-        const newChat = {
-          ...chat,
-          otherUser: otherUserInfo
-        };
-        console.log(newChat);
-        setChats(prevChats => [...prevChats, newChat]);
-      }
+        setChats(prevChats => [...prevChats, chat]);
     });
 
     // Cleanup on component unmount
