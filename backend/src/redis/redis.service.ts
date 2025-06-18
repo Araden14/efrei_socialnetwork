@@ -4,6 +4,7 @@ import { Redis } from 'ioredis';
 import { Queue } from 'bullmq';
 import { SendMessageDto } from '../chat/dto/send-message.dto';
 import { InjectQueue } from '@nestjs/bull';
+import { error } from 'console';
 
 const prisma = new PrismaClient();
 
@@ -14,7 +15,8 @@ export class RedisService {
     (async () => {
         try {
           const client = await this.chatQueue.client;
-          await client.ping();
+          const rep = await client.ping();
+          if (rep != 'PONG') throw new error();
           console.log('Redis connected ✅');
         } catch (err) {
           console.error('Redis connection failed ❌', err);
