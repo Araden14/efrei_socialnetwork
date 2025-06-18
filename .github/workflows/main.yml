@@ -3,7 +3,7 @@ name: Build, Test, and Deploy Docker to Render (test version) !ONLY FOR BACK CUR
 
 on:
   push:
-    branches: [guilherme]
+    branches: [main]
 
 jobs:
   back_build:
