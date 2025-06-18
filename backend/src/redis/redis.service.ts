@@ -10,8 +10,16 @@ const prisma = new PrismaClient();
 
 @Injectable()
 export class RedisService {
-  constructor(@InjectQueue('chat') private readonly chatQueue: Queue) {
-    console.log("Redis ✅")
+ constructor(@InjectQueue('chat') private readonly chatQueue: Queue) {
+    (async () => {
+        try {
+          const client = await this.chatQueue.client;
+          await client.ping();
+          console.log('Redis connected ✅');
+        } catch (err) {
+          console.error('Redis connection failed ❌', err);
+        }
+      })();
   }
     
     // Ecriture d'un message sur db et redis
