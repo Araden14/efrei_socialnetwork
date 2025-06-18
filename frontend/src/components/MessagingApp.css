@@ -464,3 +464,15 @@
   transform: translateY(-2px) scale(1.04);
   box-shadow: 0 4px 16px rgba(239, 68, 68, 0.15);
 }
+
+.new-message-indicator {
+  width: 12px;
+  height: 12px;
+  background-color: lightblue;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.new-message {
+  background-color: lightgreen;
+}

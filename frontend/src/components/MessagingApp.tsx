@@ -135,6 +135,10 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ onLogout }) => {
     newSocket.on('disconnect', () => {
       console.log('Disconnected from WebSocket server');
     });
+    newSocket.on('chat:delete', (id: number) => {
+      console.log('Received chat:delete', id);
+      setChats((prevChats) => prevChats.filter((chat) => chat.id !== id));
+    });
 
     newSocket.on('chat:init', (data: ChatInitData) => {
       console.log('Received chat:init:', data);
@@ -291,7 +295,7 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ onLogout }) => {
     <div className="messaging-app">
       {/* Affichage de l'id utilisateur connecté */}
       <div style={{position: 'absolute', top: 10, right: 20, fontSize: 13, color: '#888'}}>
-        ID utilisateur connecté : <b>{authUser?.id}</b>
+        Connecté en tant que : <b>{authUser?.email}</b>
       </div>
       {/* Sidebar */}
       <div className="sidebar">
@@ -352,9 +356,15 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ onLogout }) => {
           {chats.map((chat) => (
             <div
               key={chat.id}
-              onClick={() => handleSelectChat(chat)}
-              className={`chat-item${selectedChat?.id === chat.id ? ' active' : ''}`}
-              style={{ position: 'relative' }}
+              onClick={() => {
+                handleSelectChat(chat);
+                setChats((prevChats) =>
+                  prevChats.map((c) =>
+                    c.id === chat.id ? { ...c, newMessage: false } : c
+                  )
+                );
+              }}
+              className={`chat-item${selectedChat?.id === chat.id ? ' active' : ''} ${chat.newMessage ? 'new-message' : ''}`}
             >
               <div className="chat-avatar-container">
                 <div className="chat-avatar">{avatar}</div>
@@ -387,9 +397,7 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ onLogout }) => {
             <div className="chat-header-bar">
               <h3>{selectedChat.title} - {selectedChat.otherUser?.name}</h3>
               <div className="chat-user-info">
-                {selectedChat.newMessage && <div className="new-message-indicator">Nouveau message</div>}
-                <div className="header-avatar-container">
-                </div>
+                <div className="header-avatar-container"></div>
               </div>
               <div className="chat-actions">
                 <button className="action-btn"><Phone /></button>
@@ -406,9 +414,9 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ onLogout }) => {
                   <div className="message-bubble">
                     <p>{message.content}</p>
                     <span className="message-time">
-                      {new Date(message.timestamp).toLocaleTimeString('fr-FR', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
+                      {new Date(message.timestamp).toLocaleTimeString('fr-FR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
                       })}
                     </span>
                   </div>
@@ -444,4 +452,4 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ onLogout }) => {
   );
 };
 
-export default MessagingApp; 
+export default MessagingApp;

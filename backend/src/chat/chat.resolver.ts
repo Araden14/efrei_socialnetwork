@@ -16,6 +16,10 @@ export class ChatResolver {
   // delete chat
   @Mutation(() => Chat)
   async deleteChat(@Args('id', { type: () => Int }) id: number) {
+    const chat = await this.chatsService.findOne(id)
+    chat?.users.forEach(user => {
+      this.chatGateway.emitToUser(user.id, 'chat:delete', id)
+    })
     return await this.chatsService.deleteChat(id);
   }
 
