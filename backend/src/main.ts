@@ -7,11 +7,12 @@ async function bootstrap() {
 
   // Autorise les requêtes venant du front
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: process.env.CLIENT_HOST,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true, // si tu utilises des cookies ou l’authentification
   });
 
   await app.listen(4000);
-  console.log(`🚀 Server ready at http://localhost:4000/graphql`);
+  console.log(`🚀 Server ready at ${process.env.API_HOST}/graphql`);
 }
 bootstrap();

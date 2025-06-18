@@ -4,7 +4,7 @@
 const { io } = require("socket.io-client");
 
 // Remplacez localhost par l'adresse appropriée si votre backend tourne dans Docker
-const socket = io("http://localhost:4000");
+const socket = io(process.env.API_HOST);
 
 // Quand la connexion WebSocket est établie, on logue l’ID du socket
 socket.on("connect", () => {

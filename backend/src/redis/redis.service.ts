@@ -4,14 +4,24 @@ import { Redis } from 'ioredis';
 import { Queue } from 'bullmq';
 import { SendMessageDto } from '../chat/dto/send-message.dto';
 import { InjectQueue } from '@nestjs/bull';
+import { error } from 'console';
 
 const prisma = new PrismaClient();
 
 
 @Injectable()
 export class RedisService {
-  constructor(@InjectQueue('chat') private readonly chatQueue: Queue) {
-    console.log("Redis ✅")
+ constructor(@InjectQueue('chat') private readonly chatQueue: Queue) {
+    (async () => {
+        try {
+          const client = await this.chatQueue.client;
+          const rep = await client.ping();
+          if (rep != 'PONG') throw new error();
+          console.log('Redis connected ✅');
+        } catch (err) {
+          console.error('Redis connection failed ❌', err);
+        }
+      })();
   }
     
     // Ecriture d'un message sur db et redis

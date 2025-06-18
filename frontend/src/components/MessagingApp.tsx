@@ -7,7 +7,6 @@ import './MessagingApp.css';
 import { useMessage } from '../context/messagecontext';
 
 interface MessagingAppProps {
-  user: UserType;
   onLogout: () => void;
 }
 
@@ -105,7 +104,7 @@ const SEND_MESSAGE_MUTATION = gql`
   }
 `;
 
-const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
+const MessagingApp: React.FC<MessagingAppProps> = ({ onLogout }) => {
   const { user: authUser } = useAuth();
   const { messages, setMessages, chats, setChats, users, setUsers } = useMessage();
   const [showNewChat, setShowNewChat] = useState<boolean>(false);
@@ -122,7 +121,7 @@ const MessagingApp: React.FC<MessagingAppProps> = ({ user, onLogout }) => {
   const [deleteChat] = useMutation<any, { id: number }>(DELETE_CHAT);
   useEffect(() => {
     // Initialize socket connection
-    const newSocket = io('http://localhost:4000', {
+    const newSocket = io(import.meta.env.VITE_API_HOST, {
       query: { userid: authUser?.id }
     });
 
